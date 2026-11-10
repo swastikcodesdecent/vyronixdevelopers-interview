@@ -10,25 +10,34 @@ class WebRTCService {
         { urls: 'stun:stun.l.google.com:19302' },
         { urls: 'stun:stun1.l.google.com:19302' },
         { urls: 'stun:stun2.l.google.com:19302' },
-        { urls: 'stun:stun3.l.google.com:19302' }
-      ]
+        { urls: 'stun:stun3.l.google.com:19302' },
+        { urls: 'stun:stun4.l.google.com:19302' }
+      ],
+      iceCandidatePoolSize: 10
     };
 
-    // Candidate maintains a Map of RTCPeerConnections (viewerPeerId -> RTCPeerConnection)
-    // Viewer maintains a single RTCPeerConnection
+    // Candidate maintains Map<viewerPeerId, { pc, pendingCandidates, lastOfferAt }>
     this.peerConnections = new Map();
+
+    // Viewer maintains single RTCPeerConnection
     this.peerConnection = null;
+    this.viewerPendingCandidates = [];
+    this.candidatePeerId = null;
 
     this.webcamStream = null;
     this.screenStream = null;
     this.remoteWebcamStream = new MediaStream();
     this.remoteScreenStream = new MediaStream();
+
     this.expectedWebcamStreamId = null;
     this.expectedScreenStreamId = null;
+    this.expectedWebcamTrackIds = [];
+    this.expectedScreenTrackIds = [];
 
     this.signalingChannel = null;
     this.firestoreUnsub = null;
     this.processedSignals = new Set();
+    this._viewerRetryInterval = null;
 
     this.peerId = 'peer-' + Math.random().toString(36).substr(2, 9);
     this.role = null;
@@ -41,15 +50,18 @@ class WebRTCService {
   }
 
   initSignaling(roomId) {
-    // Clean up any previous listeners first
     this.teardownSignaling();
     this.roomId = roomId;
     this.processedSignals.clear();
+
+    // Tolerance of 2 minutes to handle clock skew between candidate & interviewer devices
+    const staleThreshold = Date.now() - 120000;
 
     const handleMessage = async (msg) => {
       if (!msg || msg.senderPeerId === this.peerId) return;
       if (msg.targetPeerId && msg.targetPeerId !== this.peerId) return;
       if (msg.role === this.role) return;
+      if (msg.timestamp && msg.timestamp < staleThreshold) return;
 
       const sigKey = msg.sigId || `${msg.senderPeerId}-${msg.type}-${msg.timestamp}`;
       if (this.processedSignals.has(sigKey)) return;
@@ -74,21 +86,19 @@ class WebRTCService {
       }
     };
 
-    // 1. Local BroadcastChannel (for same-browser multi-tab sync)
+    // 1. Local BroadcastChannel (instant same-browser testing)
     try {
       this.signalingChannel = new BroadcastChannel(`vyronix_webrtc_${roomId}`);
       this.signalingChannel.onmessage = (event) => handleMessage(event.data);
     } catch (e) {}
 
-    // 2. Cloud Firestore Real-time Signaling (cross-network)
+    // 2. Cloud Firestore Real-time Signaling (no server-side clock-skew filter)
     if (window.firebaseServices && window.firebaseServices.firestore) {
       try {
-        const startTime = Date.now() - 8000;
         this.firestoreUnsub = window.firebaseServices.firestore
           .collection('webrtcRooms')
           .doc(roomId)
           .collection('signals')
-          .where('timestamp', '>=', startTime)
           .onSnapshot((snapshot) => {
             snapshot.docChanges().forEach((change) => {
               if (change.type === 'added') {
@@ -150,69 +160,131 @@ class WebRTCService {
     }
   }
 
-  // Candidate Setup: Capture Webcam + Screen respecting settings & browser capabilities
-  async startCandidateMedia(settings = {}) {
+  // Candidate Step 1: Capture Webcam + Microphone (never requires user gesture once permission granted)
+  async startCandidateWebcam(settings = {}) {
     this.role = 'candidate';
     const requireWebcam = settings.requireWebcam !== false;
-    const requireScreenShare = settings.requireScreenShare !== false;
 
-    // 1. Webcam + Microphone
+    if (this.webcamStream && this.webcamStream.getTracks().some(t => t.readyState === 'live')) {
+      return this.webcamStream;
+    }
+
     try {
       this.webcamStream = await navigator.mediaDevices.getUserMedia({
         video: { width: { ideal: 1280 }, height: { ideal: 720 }, facingMode: 'user' },
         audio: true
       });
+      return this.webcamStream;
     } catch (e) {
       console.warn('[WebRTC] Webcam access rejected or unavailable:', e.message);
       if (requireWebcam) {
         throw new Error('Camera and Microphone access required to proceed.');
       }
+      return null;
     }
+  }
 
-    // 2. Screen Share (gracefully skip if mobile browser doesn't support getDisplayMedia)
+  // Candidate Step 2: Capture Screen Share (must be called inside a user click gesture!)
+  async startCandidateScreenShare(settings = {}) {
+    this.role = 'candidate';
+    const requireScreenShare = settings.requireScreenShare !== false;
     const canDisplayMedia = !!(navigator.mediaDevices && typeof navigator.mediaDevices.getDisplayMedia === 'function');
-    if (canDisplayMedia) {
-      try {
-        this.screenStream = await navigator.mediaDevices.getDisplayMedia({
-          video: { displaySurface: 'monitor' },
-          audio: false
-        });
 
-        const screenTrack = this.screenStream.getVideoTracks()[0];
-        if (screenTrack) {
-          screenTrack.onended = () => {
-            this.sendSignal('stream-stopped', { kind: 'screen' });
-            if (this.onTrackEnded) this.onTrackEnded('screen');
-          };
-        }
-      } catch (e) {
-        console.warn('[WebRTC] Screen sharing rejected or unavailable:', e.message);
-        if (requireScreenShare) {
-          throw new Error('Screen sharing permission is required for proctoring.');
-        }
-      }
-    } else {
+    if (!canDisplayMedia) {
       console.warn('[WebRTC] getDisplayMedia not supported on this device/browser.');
+      return null;
     }
 
+    if (this.screenStream && this.screenStream.getTracks().some(t => t.readyState === 'live')) {
+      return this.screenStream;
+    }
+
+    try {
+      this.screenStream = await navigator.mediaDevices.getDisplayMedia({
+        video: { displaySurface: 'monitor' },
+        audio: false
+      });
+
+      const screenTrack = this.screenStream.getVideoTracks()[0];
+      if (screenTrack) {
+        screenTrack.onended = () => {
+          this.sendSignal('stream-stopped', { kind: 'screen' });
+          if (this.onTrackEnded) this.onTrackEnded('screen');
+        };
+      }
+
+      // Attach screen tracks and renegotiate with all active interviewers
+      await this.attachScreenStreamAndRenegotiate();
+      return this.screenStream;
+    } catch (e) {
+      console.warn('[WebRTC] Screen sharing rejected or unavailable:', e.message);
+      if (requireScreenShare) {
+        throw new Error('Screen sharing permission is required for proctoring.');
+      }
+      return null;
+    }
+  }
+
+  // Legacy combined helper (kept for compatibility)
+  async startCandidateMedia(settings = {}) {
+    await this.startCandidateWebcam(settings);
+    await this.startCandidateScreenShare(settings);
     return {
       webcamStream: this.webcamStream,
       screenStream: this.screenStream
     };
   }
 
+  _buildOfferMetadata(offer) {
+    return {
+      sdp: { type: offer.type, sdp: offer.sdp },
+      webcamStreamId: this.webcamStream ? this.webcamStream.id : null,
+      screenStreamId: this.screenStream ? this.screenStream.id : null,
+      webcamTrackIds: this.webcamStream ? this.webcamStream.getTracks().map(t => t.id) : [],
+      screenTrackIds: this.screenStream ? this.screenStream.getTracks().map(t => t.id) : []
+    };
+  }
+
+  // Add newly acquired screen tracks to all existing viewer connections and renegotiate
+  async attachScreenStreamAndRenegotiate() {
+    if (!this.screenStream) return;
+    for (const [viewerPeerId, entry] of this.peerConnections.entries()) {
+      const pc = entry.pc;
+      if (!pc || pc.connectionState === 'closed') continue;
+      try {
+        const existingTrackIds = new Set(pc.getSenders().map(s => s.track && s.track.id).filter(Boolean));
+        this.screenStream.getTracks().forEach(track => {
+          if (!existingTrackIds.has(track.id)) {
+            pc.addTrack(track, this.screenStream);
+          }
+        });
+        const offer = await pc.createOffer();
+        await pc.setLocalDescription(offer);
+        entry.lastOfferAt = Date.now();
+        this.sendSignal('offer', this._buildOfferMetadata(offer), viewerPeerId);
+      } catch (err) {
+        console.warn('[WebRTC] Screen renegotiation notice:', err.message);
+      }
+    }
+  }
+
   // Candidate creates a dedicated RTCPeerConnection for each monitoring viewer (supports Both Suvajit & Swastik!)
   async createOfferForViewer(viewerPeerId) {
     if (!viewerPeerId) return;
 
-    // Close existing connection for this viewer if renegotiating
-    if (this.peerConnections.has(viewerPeerId)) {
-      try { this.peerConnections.get(viewerPeerId).close(); } catch (e) {}
+    const existing = this.peerConnections.get(viewerPeerId);
+    if (existing && existing.pc && existing.pc.connectionState !== 'closed' && existing.pc.connectionState !== 'failed') {
+      // Avoid duplicate rapid-fire offers during initial handshake
+      if (Date.now() - existing.lastOfferAt < 3500) {
+        return;
+      }
+      try { existing.pc.close(); } catch (e) {}
       this.peerConnections.delete(viewerPeerId);
     }
 
     const pc = new RTCPeerConnection(this.rtcConfig);
-    this.peerConnections.set(viewerPeerId, pc);
+    const entry = { pc, pendingCandidates: [], lastOfferAt: Date.now() };
+    this.peerConnections.set(viewerPeerId, entry);
 
     pc.onicecandidate = (event) => {
       if (event.candidate) {
@@ -243,18 +315,13 @@ class WebRTCService {
     const offer = await pc.createOffer();
     await pc.setLocalDescription(offer);
 
-    this.sendSignal('offer', {
-      sdp: { type: offer.type, sdp: offer.sdp },
-      webcamStreamId: this.webcamStream ? this.webcamStream.id : null,
-      screenStreamId: this.screenStream ? this.screenStream.id : null
-    }, viewerPeerId);
+    this.sendSignal('offer', this._buildOfferMetadata(offer), viewerPeerId);
   }
 
   // Candidate starts listening for any monitoring interviewers
   async startCandidateCall(roomId) {
     this.role = 'candidate';
     this.initSignaling(roomId);
-    // Announce candidate availability to any already-waiting interviewers
     this.sendSignal('candidate-ready', {});
   }
 
@@ -266,17 +333,29 @@ class WebRTCService {
     this.remoteScreenStream = new MediaStream();
     this.expectedWebcamStreamId = null;
     this.expectedScreenStreamId = null;
+    this.expectedWebcamTrackIds = [];
+    this.expectedScreenTrackIds = [];
+    this.candidatePeerId = null;
+    this.viewerPendingCandidates = [];
 
     this.initSignaling(roomId);
     this.createViewerPeerConnection();
 
-    // Tell candidate a viewer is ready (and retry briefly in case of race)
+    // Send viewer-ready immediately and keep pulsing every 3.5s until remote video tracks arrive
     this.sendSignal('viewer-ready', {});
-    this._readyRetryTimer = setTimeout(() => {
-      if (this.role === 'interviewer' && this.roomId === roomId && this.remoteWebcamStream.getTracks().length === 0 && this.remoteScreenStream.getTracks().length === 0) {
+    this._viewerRetryInterval = setInterval(() => {
+      if (this.role !== 'interviewer' || this.roomId !== roomId) {
+        clearInterval(this._viewerRetryInterval);
+        this._viewerRetryInterval = null;
+        return;
+      }
+      const hasAnyVideo =
+        this.remoteWebcamStream.getVideoTracks().length > 0 ||
+        this.remoteScreenStream.getVideoTracks().length > 0;
+      if (!hasAnyVideo) {
         this.sendSignal('viewer-ready', {});
       }
-    }, 2500);
+    }, 3500);
   }
 
   createViewerPeerConnection() {
@@ -286,6 +365,7 @@ class WebRTCService {
 
     const pc = new RTCPeerConnection(this.rtcConfig);
     this.peerConnection = pc;
+    this.viewerPendingCandidates = [];
 
     pc.onicecandidate = (event) => {
       if (event.candidate) {
@@ -306,17 +386,30 @@ class WebRTCService {
       const streamId = stream ? stream.id : null;
       const track = event.track;
 
+      const addUniqueTrack = (targetStream, trk) => {
+        if (!targetStream.getTracks().some(t => t.id === trk.id)) {
+          targetStream.addTrack(trk);
+        }
+      };
+
       if (track.kind === 'audio') {
-        this.remoteWebcamStream.addTrack(track);
+        addUniqueTrack(this.remoteWebcamStream, track);
       } else if (track.kind === 'video') {
-        if (this.expectedScreenStreamId && streamId === this.expectedScreenStreamId) {
-          this.remoteScreenStream.addTrack(track);
-        } else if (this.expectedWebcamStreamId && streamId === this.expectedWebcamStreamId) {
-          this.remoteWebcamStream.addTrack(track);
+        const isScreenById =
+          (this.expectedScreenTrackIds && this.expectedScreenTrackIds.includes(track.id)) ||
+          (this.expectedScreenStreamId && streamId === this.expectedScreenStreamId);
+        const isWebcamById =
+          (this.expectedWebcamTrackIds && this.expectedWebcamTrackIds.includes(track.id)) ||
+          (this.expectedWebcamStreamId && streamId === this.expectedWebcamStreamId);
+
+        if (isScreenById) {
+          addUniqueTrack(this.remoteScreenStream, track);
+        } else if (isWebcamById) {
+          addUniqueTrack(this.remoteWebcamStream, track);
         } else if (this.remoteWebcamStream.getVideoTracks().length === 0) {
-          this.remoteWebcamStream.addTrack(track);
+          addUniqueTrack(this.remoteWebcamStream, track);
         } else {
-          this.remoteScreenStream.addTrack(track);
+          addUniqueTrack(this.remoteScreenStream, track);
         }
       }
 
@@ -332,16 +425,32 @@ class WebRTCService {
   }
 
   async handleOffer(msg) {
+    const isSameCandidate = this.candidatePeerId === msg.senderPeerId &&
+      this.peerConnection &&
+      this.peerConnection.connectionState !== 'closed' &&
+      this.peerConnection.connectionState !== 'failed';
+
     this.candidatePeerId = msg.senderPeerId;
     this.expectedWebcamStreamId = msg.webcamStreamId || null;
     this.expectedScreenStreamId = msg.screenStreamId || null;
+    this.expectedWebcamTrackIds = msg.webcamTrackIds || [];
+    this.expectedScreenTrackIds = msg.screenTrackIds || [];
 
-    // Reset remote media containers cleanly for fresh offer
-    this.remoteWebcamStream = new MediaStream();
-    this.remoteScreenStream = new MediaStream();
-    const pc = this.createViewerPeerConnection();
+    let pc = this.peerConnection;
+    if (!isSameCandidate) {
+      this.remoteWebcamStream = new MediaStream();
+      this.remoteScreenStream = new MediaStream();
+      pc = this.createViewerPeerConnection();
+    }
 
     await pc.setRemoteDescription(new RTCSessionDescription(msg.sdp));
+
+    // Flush any buffered ICE candidates
+    while (this.viewerPendingCandidates.length > 0) {
+      const c = this.viewerPendingCandidates.shift();
+      try { await pc.addIceCandidate(new RTCIceCandidate(c)); } catch (e) {}
+    }
+
     const answer = await pc.createAnswer();
     await pc.setLocalDescription(answer);
 
@@ -351,31 +460,40 @@ class WebRTCService {
   }
 
   async handleAnswer(viewerPeerId, sdp) {
-    const pc = this.peerConnections.get(viewerPeerId);
-    if (pc && sdp) {
-      await pc.setRemoteDescription(new RTCSessionDescription(sdp));
+    const entry = this.peerConnections.get(viewerPeerId);
+    if (entry && entry.pc && sdp) {
+      await entry.pc.setRemoteDescription(new RTCSessionDescription(sdp));
+      while (entry.pendingCandidates.length > 0) {
+        const c = entry.pendingCandidates.shift();
+        try { await entry.pc.addIceCandidate(new RTCIceCandidate(c)); } catch (e) {}
+      }
     }
   }
 
   async handleCandidate(senderPeerId, candidate) {
     if (!candidate) return;
-    const pc = this.role === 'candidate'
-      ? this.peerConnections.get(senderPeerId)
-      : this.peerConnection;
-
-    if (pc) {
-      try {
-        await pc.addIceCandidate(new RTCIceCandidate(candidate));
-      } catch (e) {
-        console.warn('[WebRTC] ICE candidate error:', e.message);
+    if (this.role === 'candidate') {
+      const entry = this.peerConnections.get(senderPeerId);
+      if (entry && entry.pc) {
+        if (entry.pc.remoteDescription) {
+          try { await entry.pc.addIceCandidate(new RTCIceCandidate(candidate)); } catch (e) {}
+        } else {
+          entry.pendingCandidates.push(candidate);
+        }
+      }
+    } else if (this.peerConnection) {
+      if (this.peerConnection.remoteDescription) {
+        try { await this.peerConnection.addIceCandidate(new RTCIceCandidate(candidate)); } catch (e) {}
+      } else {
+        this.viewerPendingCandidates.push(candidate);
       }
     }
   }
 
   stopMonitoringOnly() {
-    if (this._readyRetryTimer) {
-      clearTimeout(this._readyRetryTimer);
-      this._readyRetryTimer = null;
+    if (this._viewerRetryInterval) {
+      clearInterval(this._viewerRetryInterval);
+      this._viewerRetryInterval = null;
     }
     if (this.peerConnection) {
       try { this.peerConnection.close(); } catch (e) {}
@@ -394,8 +512,8 @@ class WebRTCService {
       this.screenStream.getTracks().forEach(t => t.stop());
       this.screenStream = null;
     }
-    this.peerConnections.forEach(pc => {
-      try { pc.close(); } catch (e) {}
+    this.peerConnections.forEach(entry => {
+      try { if (entry.pc) entry.pc.close(); } catch (e) {}
     });
     this.peerConnections.clear();
     this.stopMonitoringOnly();
