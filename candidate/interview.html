@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Live Interview Session – Devs Interview - By Vyronix Labs</title>
+  <link rel="stylesheet" href="../assets/css/global.css">
+  <link rel="stylesheet" href="../assets/css/candidate.css">
+  <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body class="candidate-body">
+  <div class="candidate-room">
+    <!-- Fullscreen Warning Overlay (Triggers when candidate leaves fullscreen) -->
+    <div class="fullscreen-warning-overlay" id="fullscreen-overlay">
+      <div class="fullscreen-warning-card">
+        <div class="metric-icon-wrap" style="margin: 0 auto 16px; background: rgba(239,68,68,0.15); color: var(--danger);">
+          <i data-lucide="alert-triangle" style="width: 32px; height: 32px;"></i>
+        </div>
+        <h3 style="color: var(--danger); font-size: 1.3rem; margin-bottom: 8px;">Fullscreen Policy Violation</h3>
+        <p style="font-size: 0.9rem; color: var(--text-muted); margin-bottom: 20px;">
+          You have exited full-screen mode. This violation has been recorded in the proctoring audit log and reported to your interviewer.
+        </p>
+        <div style="font-size: 0.85rem; font-weight: 700; color: var(--warning); margin-bottom: 24px;">
+          Violation Warnings: <span id="overlay-warning-count">1</span> / <span id="overlay-max-warnings">3</span>
+        </div>
+        <button class="btn btn-primary btn-lg w-full" id="reenter-fullscreen-btn">
+          <i data-lucide="maximize"></i> Return to Fullscreen
+        </button>
+      </div>
+    </div>
+
+    <!-- Live Violation Alert Toast Banner -->
+    <div class="proctoring-warning-banner" id="warning-banner">
+      <i data-lucide="alert-octagon" style="width: 22px; height: 22px; flex-shrink: 0;"></i>
+      <div style="flex: 1;">
+        <div style="font-weight: 700; font-size: 0.9rem;" id="warning-banner-title">Proctoring Alert</div>
+        <div style="font-size: 0.78rem;" id="warning-banner-desc">Focus loss detected.</div>
+      </div>
+      <span class="badge" style="background: rgba(0,0,0,0.4); color: #FFF;" id="warning-banner-count">Warning 1/3</span>
+    </div>
+
+    <!-- Room Header -->
+    <header class="candidate-header">
+      <div class="candidate-header-left">
+        <div class="brand-logo-icon" style="width: 32px; height: 32px;">
+          <i data-lucide="shield-check" style="width: 18px; height: 18px;"></i>
+        </div>
+        <div>
+          <span style="font-weight: 700; font-size: 0.95rem; color: var(--text-main);" id="hdr-cand-name">Candidate</span>
+          <span style="font-size: 0.8rem; color: var(--secondary); margin-left: 8px;" id="hdr-cand-role">Target Role</span>
+        </div>
+      </div>
+
+      <div class="candidate-header-center">
+        <div class="interview-timer-display">
+          <i data-lucide="clock" style="width: 16px; height: 16px; color: var(--secondary);"></i>
+          <span id="interview-elapsed-timer">00:00:00</span>
+        </div>
+
+        <span class="badge badge-in-progress">
+          <span class="badge-dot"></span>
+          Proctoring Active
+        </span>
+      </div>
+
+      <div class="candidate-header-right">
+        <button class="btn btn-danger btn-sm" id="end-interview-btn">
+          <i data-lucide="power"></i> End Interview
+        </button>
+      </div>
+    </header>
+
+    <!-- Stage Area -->
+    <div class="candidate-stage">
+      <!-- Main Content / Workspace Area -->
+      <div class="candidate-main-area">
+        <!-- Flashed Question Banner Area -->
+        <div id="active-question-card" class="flashed-question-box" style="display: none;">
+          <div class="question-header">
+            <span class="question-num-pill" id="question-header-pill">Active Question</span>
+            <div class="question-timer-countdown">
+              <i data-lucide="hourglass" style="width: 14px; height: 14px;"></i>
+              <span id="q-timer-display">05:00</span>
+            </div>
+          </div>
+
+          <div class="question-text-content" id="q-content-text">
+            Question text will appear here.
+          </div>
+
+          <div class="question-sender-meta">
+            <i data-lucide="user-check" style="width: 14px; height: 14px;"></i>
+            <span>Broadcasted by <strong id="q-sender-name">Interviewer</strong></span>
+          </div>
+        </div>
+
+        <!-- Idle Question Placeholder -->
+        <div id="idle-question-card" class="question-idle-box">
+          <div class="metric-icon-wrap" style="margin: 0 auto 12px; background: rgba(56,189,248,0.1); color: var(--secondary);">
+            <i data-lucide="message-square" style="width: 24px; height: 24px;"></i>
+          </div>
+          <h4 style="margin-bottom: 6px;">Awaiting Interviewer Question</h4>
+          <p class="text-muted" style="font-size: 0.85rem; max-width: 440px; margin: 0 auto;">
+            Questions broadcasted by your interviewer will flash here in real time. Maintain continuous screen sharing and camera focus.
+          </p>
+        </div>
+
+        <!-- Candidate Scratchpad / Code Workspace -->
+        <div class="candidate-workspace-box">
+          <div class="workspace-header">
+            <div style="font-weight: 600; font-size: 0.9rem; display: flex; align-items: center; gap: 8px;">
+              <i data-lucide="code" style="color: var(--secondary);"></i>
+              Technical Workspace & Problem-Solving Notes
+            </div>
+            <span class="badge" style="background: rgba(255,255,255,0.05); font-size: 0.72rem;">Scratchpad</span>
+          </div>
+
+          <div class="workspace-content">
+            <textarea id="candidate-notes-area" class="form-textarea" style="height: 100%; min-height: 240px; resize: none; font-family: 'Courier New', monospace; font-size: 0.95rem; background-color: #080D1A;" placeholder="// You may use this workspace for drafting algorithms, pseudo-code, architectural schemas, or solution outlines during your session..."></textarea>
+          </div>
+        </div>
+      </div>
+
+      <!-- Candidate Right Feeds Sidebar -->
+      <div class="candidate-feeds-sidebar">
+        <!-- Candidate Webcam Preview Card -->
+        <div class="feed-card">
+          <div class="feed-header">
+            <span style="display: flex; align-items: center; gap: 6px;">
+              <i data-lucide="camera" style="width: 14px; height: 14px; color: var(--success);"></i>
+              Webcam Feed
+            </span>
+            <span class="badge badge-in-progress" style="font-size: 0.65rem; padding: 2px 6px;">Streaming</span>
+          </div>
+          <video id="local-webcam" class="candidate-webcam-preview" autoplay playsinline muted></video>
+        </div>
+
+        <!-- Candidate Screen Share Preview Card -->
+        <div class="feed-card">
+          <div class="feed-header">
+            <span style="display: flex; align-items: center; gap: 6px;">
+              <i data-lucide="monitor" style="width: 14px; height: 14px; color: var(--secondary);"></i>
+              Shared Screen Preview
+            </span>
+            <span class="badge badge-in-progress" style="font-size: 0.65rem; padding: 2px 6px;">Broadcasting</span>
+          </div>
+          <video id="local-screen" class="candidate-screen-preview" autoplay playsinline muted></video>
+        </div>
+
+        <!-- Session Policy Card -->
+        <div class="card" style="padding: 16px;">
+          <div style="font-size: 0.78rem; font-weight: 700; text-transform: uppercase; color: var(--text-muted); margin-bottom: 8px;">
+            Active Proctoring Policy
+          </div>
+          <ul style="list-style: none; display: flex; flex-direction: column; gap: 8px; font-size: 0.78rem; color: var(--text-muted);">
+            <li style="display: flex; align-items: center; gap: 8px;">
+              <i data-lucide="check" style="color: var(--success); width: 14px; height: 14px;"></i>
+              Webcam & Audio streaming to dashboard
+            </li>
+            <li style="display: flex; align-items: center; gap: 8px;">
+              <i data-lucide="check" style="color: var(--success); width: 14px; height: 14px;"></i>
+              Desktop screen sharing verified
+            </li>
+            <li style="display: flex; align-items: center; gap: 8px;">
+              <i data-lucide="check" style="color: var(--success); width: 14px; height: 14px;"></i>
+              Window focus tracking active
+            </li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- End Interview Confirmation Modal -->
+  <div class="modal-backdrop" id="end-confirm-modal">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3 class="card-title">
+          <i data-lucide="alert-triangle" style="color: var(--warning);"></i>
+          End Interview Session?
+        </h3>
+        <button class="btn btn-icon btn-outline btn-sm" id="close-end-modal-btn">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p style="font-size: 0.9rem; margin-bottom: 14px;">
+          Are you sure you want to conclude your interview? Once ended:
+        </p>
+        <ul style="list-style: disc; margin-left: 20px; font-size: 0.85rem; color: var(--text-muted); display: flex; flex-direction: column; gap: 6px;">
+          <li>All camera, audio, and screen-sharing connections will terminate.</li>
+          <li>Your session proctoring summary will be submitted for interviewer evaluation.</li>
+          <li>You cannot re-enter the interview room without administrator rescheduling.</li>
+        </ul>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" id="cancel-end-btn">Continue Interview</button>
+        <button class="btn btn-danger" id="confirm-end-btn">Yes, End Interview</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Firebase App & Services SDKs (v10 Compat) -->
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
+
+  <script src="../firebase/config.js"></script>
+  <script src="../services/interview-service.js"></script>
+  <script src="../services/monitoring-service.js"></script>
+  <script src="../services/webrtc-service.js"></script>
+  <script src="../services/network-service.js"></script>
+  <script src="../services/notification-service.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', async () => {
+      if (window.lucide) window.lucide.createIcons();
+
+      const urlParams = new URLSearchParams(window.location.search);
+      const token = urlParams.get('token');
+
+      if (!token) {
+        alert('Access token missing.');
+        window.location.href = '../login.html';
+        return;
+      }
+
+      const interview = await window.interviewService.getInterviewByTokenAsync(token);
+      if (!interview) {
+        alert('Invalid or expired interview token.');
+        window.location.href = '../login.html';
+        return;
+      }
+
+      document.getElementById('hdr-cand-name').textContent = interview.candidateName;
+      document.getElementById('hdr-cand-role').textContent = `${interview.position} (${interview.department})`;
+      document.getElementById('overlay-max-warnings').textContent = interview.settings.maxWarnings || 3;
+
+      // Elapsed Timer
+      const startTime = Date.now();
+      const timerDisplay = document.getElementById('interview-elapsed-timer');
+      setInterval(() => {
+        const diff = Math.floor((Date.now() - startTime) / 1000);
+        const hrs = String(Math.floor(diff / 3600)).padStart(2, '0');
+        const mins = String(Math.floor((diff % 3600) / 60)).padStart(2, '0');
+        const secs = String(diff % 60).padStart(2, '0');
+        timerDisplay.textContent = `${hrs}:${mins}:${secs}`;
+      }, 1000);
+
+      // Start Media & WebRTC
+      const localWebcamVideo = document.getElementById('local-webcam');
+      const localScreenVideo = document.getElementById('local-screen');
+
+      try {
+        const { webcamStream, screenStream } = await window.webRTCService.startCandidateMedia(interview.settings);
+        if (webcamStream) localWebcamVideo.srcObject = webcamStream;
+        if (screenStream) localScreenVideo.srcObject = screenStream;
+
+        // Establish WebRTC connection using token as room id
+        await window.webRTCService.startCandidateCall(interview.token);
+      } catch (err) {
+        console.warn('[Candidate] Media capture notice', err);
+      }
+
+      // Request initial fullscreen
+      if (interview.settings.requireFullscreen) {
+        window.monitoringService.requestFullscreen();
+      }
+
+      // Start Proctoring Monitoring
+      const maxWarnings = interview.settings.maxWarnings || 3;
+      window.monitoringService.startCandidateMonitoring(interview.interviewId, maxWarnings);
+
+      const fullscreenOverlay = document.getElementById('fullscreen-overlay');
+      const reenterBtn = document.getElementById('reenter-fullscreen-btn');
+      const warningBanner = document.getElementById('warning-banner');
+      const warningDesc = document.getElementById('warning-banner-desc');
+      const warningCount = document.getElementById('warning-banner-count');
+      const overlayCount = document.getElementById('overlay-warning-count');
+
+      // Hook proctoring alerts
+      window.monitoringService.onWarningTriggered = (warning) => {
+        overlayCount.textContent = warning.warningCount;
+        warningCount.textContent = `Warning ${warning.warningCount}/${warning.maxWarnings}`;
+        warningDesc.textContent = warning.message;
+
+        if (warning.type === 'FULLSCREEN_EXIT') {
+          fullscreenOverlay.classList.add('active');
+        }
+
+        // Show toast banner
+        warningBanner.classList.add('active');
+        setTimeout(() => warningBanner.classList.remove('active'), 5000);
+      };
+
+      reenterBtn.addEventListener('click', async () => {
+        await window.monitoringService.requestFullscreen();
+        fullscreenOverlay.classList.remove('active');
+      });
+
+      // Question Broadcast Sync
+      const activeQCard = document.getElementById('active-question-card');
+      const idleQCard = document.getElementById('idle-question-card');
+      const qContentText = document.getElementById('q-content-text');
+      const qSenderName = document.getElementById('q-sender-name');
+      const qTimerDisplay = document.getElementById('q-timer-display');
+
+      let questionCountdownInterval = null;
+
+      function renderQuestion(q) {
+        if (q && q.active) {
+          idleQCard.style.display = 'none';
+          activeQCard.style.display = 'block';
+          qContentText.textContent = q.questionText;
+          qSenderName.textContent = q.senderName;
+
+          // Start question countdown
+          clearInterval(questionCountdownInterval);
+          let remaining = q.durationSeconds || 300;
+          
+          questionCountdownInterval = setInterval(() => {
+            if (remaining <= 0) {
+              clearInterval(questionCountdownInterval);
+              qTimerDisplay.textContent = 'Time Up';
+              return;
+            }
+            remaining--;
+            const mins = String(Math.floor(remaining / 60)).padStart(2, '0');
+            const secs = String(remaining % 60).padStart(2, '0');
+            qTimerDisplay.textContent = `${mins}:${secs}`;
+          }, 1000);
+        } else {
+          clearInterval(questionCountdownInterval);
+          activeQCard.style.display = 'none';
+          idleQCard.style.display = 'block';
+        }
+      }
+
+      // Check current active question
+      const currentQ = window.interviewService.getActiveQuestion(interview.interviewId);
+      renderQuestion(currentQ);
+
+      // Listen for flashed questions locally
+      window.interviewService.onSync(({ action, payload }) => {
+        if (action === 'QUESTION_FLASHED' && payload.interviewId === interview.interviewId) {
+          renderQuestion(payload);
+          window.notificationService.playAlertSound('info');
+        }
+        if (action === 'QUESTION_CLEARED' && payload.interviewId === interview.interviewId) {
+          renderQuestion(null);
+        }
+      });
+
+      // Listen for flashed questions from Cloud Firestore across networks
+      let lastQuestionId = currentQ ? currentQ.questionId : null;
+      window.interviewService.subscribeToQuestion(interview.interviewId, (q) => {
+        if (q && q.active) {
+          if (q.questionId !== lastQuestionId) {
+            lastQuestionId = q.questionId;
+            renderQuestion(q);
+            window.notificationService.playAlertSound('info');
+          }
+        } else {
+          lastQuestionId = null;
+          renderQuestion(null);
+        }
+      });
+
+      // Real-time interview state watcher (if admin terminates, cancels, or deletes session in Firestore)
+      window.interviewService.subscribeToInterview(interview.interviewId, (updated) => {
+        if (!updated || updated.status === 'Cancelled' || updated.status === 'Completed') {
+          window.monitoringService.stopCandidateMonitoring();
+          window.webRTCService.stopAllStreams();
+          window.location.href = `completed.html?token=${token}`;
+        }
+      });
+
+      // End Interview Modal
+      const endBtn = document.getElementById('end-interview-btn');
+      const endModal = document.getElementById('end-confirm-modal');
+      const cancelEndBtn = document.getElementById('cancel-end-btn');
+      const confirmEndBtn = document.getElementById('confirm-end-btn');
+      const closeEndModalBtn = document.getElementById('close-end-modal-btn');
+
+      endBtn.addEventListener('click', () => {
+        endModal.classList.add('active');
+        if (window.lucide) window.lucide.createIcons();
+      });
+
+      cancelEndBtn.addEventListener('click', () => endModal.classList.remove('active'));
+      closeEndModalBtn.addEventListener('click', () => endModal.classList.remove('active'));
+
+      confirmEndBtn.addEventListener('click', async () => {
+        window.monitoringService.stopCandidateMonitoring();
+        window.webRTCService.stopAllStreams();
+        await window.interviewService.updateStatus(interview.interviewId, 'Completed');
+        window.interviewService.recordEvent(interview.interviewId, 'Candidate Concluded Session', `${interview.candidateName} completed the interview session`, 'info');
+        window.location.href = `completed.html?token=${token}`;
+      });
+    });
+  </script>
+</body>
+</html>
+

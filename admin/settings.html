@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Platform Settings – Devs Interview - By Vyronix Labs</title>
+  <link rel="stylesheet" href="../assets/css/global.css">
+  <link rel="stylesheet" href="../assets/css/dashboard.css">
+  <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body>
+  <div class="app-layout">
+    <aside class="sidebar" id="sidebar"></aside>
+
+    <div class="main-wrapper">
+      <header class="topbar">
+        <div class="topbar-left">
+          <button class="mobile-menu-btn" id="mobile-menu-btn" title="Toggle Menu">
+            <i data-lucide="menu"></i>
+          </button>
+          <h2 class="page-title">
+            <i data-lucide="sliders" style="color: var(--primary);"></i>
+            Global Platform Configuration
+          </h2>
+          <span class="badge" style="background: rgba(99,102,241,0.15); color: var(--primary);">System Admin</span>
+        </div>
+      </header>
+
+      <main class="content-body">
+        <div style="max-width: 900px; margin: 0 auto; display: flex; flex-direction: column; gap: 24px;">
+          
+          <!-- Executive Account & Password Management -->
+          <div class="card" style="border-color: rgba(99, 102, 241, 0.4);">
+            <div class="card-header">
+              <div>
+                <h3 class="card-title">
+                  <i data-lucide="key" style="color: var(--primary);"></i>
+                  Account Security & Password Management
+                </h3>
+                <p class="card-subtitle">Update credentials for executive administrator accounts</p>
+              </div>
+              <span class="badge badge-in-progress" id="user-role-pill">Administrator</span>
+            </div>
+
+            <form id="change-password-form">
+              <div class="form-group">
+                <label class="form-label">Authenticated Account</label>
+                <input type="text" id="pwd-user-email" class="form-input" readonly style="background-color: var(--bg-main); color: var(--secondary); font-weight: 600;">
+              </div>
+
+              <div class="grid-3">
+                <div class="form-group">
+                  <label class="form-label" for="current-pwd">Current Password <span class="required">*</span></label>
+                  <input type="password" id="current-pwd" class="form-input" placeholder="••••••••" required>
+                </div>
+
+                <div class="form-group">
+                  <label class="form-label" for="new-pwd">New Password <span class="required">*</span></label>
+                  <input type="password" id="new-pwd" class="form-input" placeholder="New password" required minlength="6">
+                </div>
+
+                <div class="form-group">
+                  <label class="form-label" for="confirm-pwd">Confirm New Password <span class="required">*</span></label>
+                  <input type="password" id="confirm-pwd" class="form-input" placeholder="Confirm password" required minlength="6">
+                </div>
+              </div>
+
+              <div style="display: flex; justify-content: flex-end; gap: 12px; margin-top: 10px;">
+                <button type="submit" id="save-pwd-btn" class="btn btn-primary btn-sm">
+                  <i data-lucide="check-circle"></i> Update Password
+                </button>
+              </div>
+            </form>
+          </div>
+
+          <!-- Firebase Connection Settings -->
+          <div class="card">
+            <div class="card-header">
+              <div>
+                <h3 class="card-title">
+                  <i data-lucide="database" style="color: var(--secondary);"></i>
+                  Firebase Infrastructure Connection
+                </h3>
+                <p class="card-subtitle">Active project: vyronix-labs</p>
+              </div>
+              <span class="badge badge-in-progress" id="firebase-connection-status"><span class="badge-dot"></span>Active (vyronix-labs)</span>
+            </div>
+
+            <form id="firebase-config-form">
+              <div class="grid-2">
+                <div class="form-group">
+                  <label class="form-label" for="fb-project-id">Firebase Project ID</label>
+                  <input type="text" id="fb-project-id" class="form-input" value="vyronix-labs" readonly>
+                </div>
+
+                <div class="form-group">
+                  <label class="form-label" for="fb-api-key">Web API Key</label>
+                  <input type="text" id="fb-api-key" class="form-input" value="AIzaSyA23o-V3DoIu_ce_uc0na8p5i33J6qXRls" readonly>
+                </div>
+              </div>
+
+              <div class="grid-2">
+                <div class="form-group">
+                  <label class="form-label" for="fb-auth-domain">Auth Domain</label>
+                  <input type="text" id="fb-auth-domain" class="form-input" value="vyronix-labs.firebaseapp.com" readonly>
+                </div>
+
+                <div class="form-group">
+                  <label class="form-label" for="fb-rtdb-url">Storage Bucket</label>
+                  <input type="text" id="fb-rtdb-url" class="form-input" value="vyronix-labs.firebasestorage.app" readonly>
+                </div>
+              </div>
+
+              <div id="cloud-diag-banner" style="padding: 12px 14px; border-radius: var(--radius-md); background: rgba(255,255,255,0.03); border: 1px solid var(--border); font-size: 0.84rem; margin-bottom: 14px;">
+                Checking Firebase Authentication &amp; Cloud Firestore write access...
+              </div>
+
+              <div style="display: flex; justify-content: flex-end; gap: 10px;">
+                <button type="button" id="force-cloud-sync-btn" class="btn btn-secondary btn-sm">
+                  <i data-lucide="refresh-cw"></i> Sync Local Interviews to Firestore
+                </button>
+              </div>
+            </form>
+          </div>
+
+          <!-- WebRTC & Media Relay Settings -->
+          <div class="card">
+            <div class="card-header">
+              <div>
+                <h3 class="card-title">
+                  <i data-lucide="radio" style="color: var(--success);"></i>
+                  WebRTC Media & ICE Relay Configuration
+                </h3>
+                <p class="card-subtitle">Configure STUN and TURN relay clusters for candidate and interviewer peer connectivity</p>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Active STUN Server Pool</label>
+              <textarea class="form-textarea" rows="3" readonly style="font-family: monospace; font-size: 0.85rem; background-color: var(--bg-main);">stun:stun.l.google.com:19302&#10;stun:stun1.l.google.com:19302&#10;stun:stun2.l.google.com:19302</textarea>
+              <span class="form-helper">Public Google STUN nodes active.</span>
+            </div>
+          </div>
+
+          <!-- Proctoring Defaults -->
+          <div class="card">
+            <div class="card-header">
+              <div>
+                <h3 class="card-title">
+                  <i data-lucide="shield" style="color: var(--warning);"></i>
+                  Proctoring Policy Thresholds
+                </h3>
+                <p class="card-subtitle">Global defaults applied when new interviews are scheduled</p>
+              </div>
+            </div>
+
+            <div class="grid-2">
+              <div class="form-group">
+                <label class="form-label" for="default-max-warn">Default Violation Warning Limit</label>
+                <select id="default-max-warn" class="form-select">
+                  <option value="1">1 Warning (Strict)</option>
+                  <option value="3" selected>3 Warnings (Enterprise Recommended)</option>
+                  <option value="5">5 Warnings (Lenient)</option>
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label" for="default-integrity-penalty">Warning Penalty Score</label>
+                <select id="default-integrity-penalty" class="form-select">
+                  <option value="3">3% per violation</option>
+                  <option value="5" selected>5% per violation</option>
+                  <option value="10">10% per violation</option>
+                </select>
+              </div>
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <!-- Firebase App & Services SDKs (v10 Compat) -->
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
+
+  <script src="../firebase/config.js"></script>
+  <script src="../services/interview-service.js"></script>
+  <script src="../services/auth-service.js"></script>
+  <script src="../services/notification-service.js"></script>
+  <script src="../assets/js/app.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const user = window.authService.requireAuth('admin');
+      if (!user) return;
+
+      document.getElementById('pwd-user-email').value = `${user.name} (${user.email})`;
+
+      const pwdForm = document.getElementById('change-password-form');
+      const currentPwdInput = document.getElementById('current-pwd');
+      const newPwdInput = document.getElementById('new-pwd');
+      const confirmPwdInput = document.getElementById('confirm-pwd');
+      const saveBtn = document.getElementById('save-pwd-btn');
+
+      pwdForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+
+        const currentPass = currentPwdInput.value;
+        const newPass = newPwdInput.value;
+        const confirmPass = confirmPwdInput.value;
+
+        if (newPass !== confirmPass) {
+          alert('New password and confirmation password do not match.');
+          return;
+        }
+
+        saveBtn.disabled = true;
+        saveBtn.innerHTML = `<span>Updating...</span>`;
+
+        try {
+          await window.authService.changePassword(currentPass, newPass);
+          window.notificationService.showToast('Password Updated', 'Your account password has been updated successfully.', 'success');
+          pwdForm.reset();
+        } catch (err) {
+          alert(err.message || 'Failed to update password.');
+        } finally {
+          saveBtn.disabled = false;
+          saveBtn.innerHTML = `<i data-lucide="check-circle"></i> Update Password`;
+          if (window.lucide) window.lucide.createIcons();
+        }
+      });
+
+      // Platform Policy Thresholds persistence
+      const maxWarnSelect = document.getElementById('default-max-warn');
+      const penaltySelect = document.getElementById('default-integrity-penalty');
+      const loadPlatformCfg = () => {
+        try {
+          const cfg = JSON.parse(localStorage.getItem('vyronix_platform_settings') || '{}');
+          if (cfg.defaultMaxWarn) maxWarnSelect.value = String(cfg.defaultMaxWarn);
+          if (cfg.integrityPenalty) penaltySelect.value = String(cfg.integrityPenalty);
+        } catch (e) {}
+      };
+      const savePlatformCfg = () => {
+        const cfg = {
+          defaultMaxWarn: parseInt(maxWarnSelect.value, 10),
+          integrityPenalty: parseInt(penaltySelect.value, 10)
+        };
+        localStorage.setItem('vyronix_platform_settings', JSON.stringify(cfg));
+        window.notificationService.showToast('Policy Saved', 'Default proctoring thresholds updated.', 'success');
+      };
+      loadPlatformCfg();
+      maxWarnSelect.addEventListener('change', savePlatformCfg);
+      penaltySelect.addEventListener('change', savePlatformCfg);
+
+      // Cloud Firestore & Auth Diagnostics
+      const diagBanner = document.getElementById('cloud-diag-banner');
+      const syncBtn = document.getElementById('force-cloud-sync-btn');
+
+      async function runCloudDiagnostics() {
+        const authRes = await window.authService.ensureFirebaseAuthSession();
+        const syncRes = await window.interviewService.syncAllLocalToCloud();
+
+        if (!authRes.ok && syncRes.error) {
+          diagBanner.style.backgroundColor = 'var(--danger-light)';
+          diagBanner.style.borderColor = 'var(--danger)';
+          diagBanner.style.color = 'var(--danger)';
+          diagBanner.innerHTML = `<strong>Cloud Sync Blocked:</strong> Auth=${authRes.reason}, Firestore=${syncRes.error}. Please enable <strong>Email/Password Sign-In</strong> in Firebase Authentication or update your Firestore Rules.`;
+        } else if (syncRes.error) {
+          diagBanner.style.backgroundColor = 'var(--warning-light)';
+          diagBanner.style.borderColor = 'var(--warning)';
+          diagBanner.style.color = 'var(--warning)';
+          diagBanner.innerHTML = `<strong>Firestore Error:</strong> ${syncRes.error}. Authenticated as ${authRes.email || 'local'}.`;
+        } else {
+          diagBanner.style.backgroundColor = 'var(--success-light)';
+          diagBanner.style.borderColor = 'var(--success)';
+          diagBanner.style.color = 'var(--success)';
+          diagBanner.innerHTML = `<strong>Connected &amp; Synced:</strong> Firebase Auth (${authRes.email || 'active'}) &bull; Cloud Firestore synced (${syncRes.synced}/${syncRes.total} interviews).`;
+        }
+      }
+
+      runCloudDiagnostics();
+
+      syncBtn.addEventListener('click', async () => {
+        syncBtn.disabled = true;
+        syncBtn.innerHTML = `<i data-lucide="loader"></i> Syncing...`;
+        if (window.lucide) window.lucide.createIcons({ root: syncBtn });
+        await runCloudDiagnostics();
+        syncBtn.disabled = false;
+        syncBtn.innerHTML = `<i data-lucide="refresh-cw"></i> Sync Local Interviews to Firestore`;
+        if (window.lucide) window.lucide.createIcons({ root: syncBtn });
+        window.notificationService.showToast('Cloud Sync Checked', 'Diagnostics and Firestore sync completed.', 'info');
+      });
+    });
+  </script>
+</body>
+</html>

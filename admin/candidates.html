@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Candidates Directory – Devs Interview - By Vyronix Labs</title>
+  <link rel="stylesheet" href="../assets/css/global.css">
+  <link rel="stylesheet" href="../assets/css/dashboard.css">
+  <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body>
+  <div class="app-layout">
+    <aside class="sidebar" id="sidebar"></aside>
+
+    <div class="main-wrapper">
+      <header class="topbar">
+        <div class="topbar-left">
+          <button class="mobile-menu-btn" id="mobile-menu-btn" title="Toggle Menu">
+            <i data-lucide="menu"></i>
+          </button>
+          <h2 class="page-title">
+            <i data-lucide="users" style="color: var(--primary);"></i>
+            Candidate Talent Directory
+          </h2>
+        </div>
+        <div class="topbar-right">
+          <div style="position: relative;">
+            <button class="topbar-action-btn" id="notif-bell-btn">
+              <i data-lucide="bell"></i>
+              <span class="notification-count" id="notif-badge-count" style="display: none;">0</span>
+            </button>
+            <div class="notification-dropdown" id="notification-dropdown">
+              <div class="notification-header">
+                <span style="font-weight: 700; font-size: 0.9rem;">Audit Alerts</span>
+                <button class="btn btn-sm btn-outline" id="mark-all-read-btn">Clear All</button>
+              </div>
+              <ul class="notification-list" id="notification-list"></ul>
+            </div>
+          </div>
+          <a href="schedule.html" class="btn btn-primary btn-sm" id="topbar-schedule-btn">
+            <i data-lucide="plus"></i> Schedule Interview
+          </a>
+        </div>
+      </header>
+
+      <main class="content-body">
+        <!-- Search and Filter Bar -->
+        <div class="card" style="margin-bottom: 24px; padding: 18px 24px;">
+          <div class="filter-bar-inner" style="display: flex; gap: 16px; flex-wrap: wrap; align-items: center; justify-content: space-between;">
+            <div class="input-with-icon" style="flex: 1; min-width: 280px;">
+              <i data-lucide="search" class="input-icon"></i>
+              <input type="text" id="candidate-search-input" class="form-input" placeholder="Search candidate by name, email, or position...">
+            </div>
+
+            <div class="filter-controls-group" style="display: flex; gap: 12px; flex-wrap: wrap;">
+              <select id="candidate-dept-filter" class="form-select" style="width: 200px;">
+                <option value="ALL">All Departments</option>
+                <option value="Frontend Developer">Frontend Developer</option>
+                <option value="Backend Developer">Backend Developer</option>
+                <option value="Cybersecurity">Cybersecurity</option>
+                <option value="IoT & Robotics">IoT & Robotics</option>
+                <option value="People & Talent">People & Talent</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <!-- Candidates Table -->
+        <div class="card">
+          <div class="card-header">
+            <div>
+              <h3 class="card-title">Talent Pool (<span id="cand-total-count">0</span>)</h3>
+              <p class="card-subtitle">Comprehensive candidate records, interview history, and proctoring track records</p>
+            </div>
+          </div>
+
+          <div class="table-container">
+            <table class="table">
+              <thead>
+                <tr>
+                  <th>Candidate</th>
+                  <th>Target Position</th>
+                  <th>Department</th>
+                  <th>Contact Phone</th>
+                  <th>Interviews</th>
+                  <th>Latest Status</th>
+                  <th style="text-align: right;">Action</th>
+                </tr>
+              </thead>
+              <tbody id="candidates-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <!-- Candidate Profile Drawer Modal -->
+  <div class="modal-backdrop" id="candidate-modal">
+    <div class="modal-dialog" style="max-width: 650px;">
+      <div class="modal-header">
+        <h3 class="card-title" id="cand-modal-title">Candidate Profile</h3>
+        <button class="btn btn-icon btn-outline btn-sm" id="close-cand-modal-btn">&times;</button>
+      </div>
+      <div class="modal-body" id="cand-modal-body"></div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" id="close-cand-modal-footer">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Firebase App & Services SDKs (v10 Compat) -->
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
+
+  <script src="../firebase/config.js"></script>
+  <script src="../services/interview-service.js"></script>
+  <script src="../services/auth-service.js"></script>
+  <script src="../services/notification-service.js"></script>
+  <script src="../assets/js/app.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const user = window.authService.requireAuth();
+      if (!user) return;
+
+      const isAdmin = user.role === 'admin';
+      const searchInput = document.getElementById('candidate-search-input');
+      const deptFilter = document.getElementById('candidate-dept-filter');
+      const tbody = document.getElementById('candidates-tbody');
+      const countElem = document.getElementById('cand-total-count');
+
+      const topScheduleBtn = document.getElementById('topbar-schedule-btn');
+      if (topScheduleBtn && !isAdmin) topScheduleBtn.style.display = 'none';
+
+      function renderCandidates() {
+        let interviews = window.interviewService.getInterviews();
+
+        if (!isAdmin) {
+          interviews = interviews.filter(i =>
+            i.interviewerId === user.uid ||
+            (i.interviewerEmail && i.interviewerEmail.toLowerCase() === user.email.toLowerCase())
+          );
+        }
+
+        // Group interviews by unique candidate email
+        const candMap = new Map();
+        interviews.forEach(item => {
+          const email = item.candidateEmail.toLowerCase();
+          if (!candMap.has(email)) {
+            candMap.set(email, {
+              name: item.candidateName,
+              email: item.candidateEmail,
+              phone: item.candidatePhone || 'N/A',
+              position: item.position,
+              department: item.department,
+              interviews: []
+            });
+          }
+          candMap.get(email).interviews.push(item);
+        });
+
+        let candidates = Array.from(candMap.values());
+
+        // Apply filters
+        const q = searchInput.value.trim().toLowerCase();
+        const deptVal = deptFilter.value;
+
+        if (q) {
+          candidates = candidates.filter(c =>
+            c.name.toLowerCase().includes(q) ||
+            c.email.toLowerCase().includes(q) ||
+            c.position.toLowerCase().includes(q)
+          );
+        }
+
+        if (deptVal !== 'ALL') {
+          candidates = candidates.filter(c => c.department === deptVal);
+        }
+
+        countElem.textContent = candidates.length;
+
+        if (candidates.length === 0) {
+          tbody.innerHTML = `
+            <tr>
+              <td colspan="7">
+                <div class="empty-state">
+                  <div class="empty-state-icon"><i data-lucide="user-x"></i></div>
+                  <div class="empty-state-title">No candidate profiles found</div>
+                  <p class="empty-state-desc">Try clearing search filters.</p>
+                </div>
+              </td>
+            </tr>
+          `;
+          if (window.lucide) window.lucide.createIcons({ root: tbody });
+          return;
+        }
+
+        tbody.innerHTML = candidates.map(c => {
+          const latestInterview = c.interviews[0];
+          return `
+            <tr>
+              <td>
+                <div style="font-weight: 600; color: var(--text-main);">${c.name}</div>
+                <div class="text-muted" style="font-size: 0.78rem;">${c.email}</div>
+              </td>
+              <td>
+                <div style="font-weight: 500; font-size: 0.88rem;">${c.position}</div>
+              </td>
+              <td>
+                <span style="font-size: 0.85rem;">${c.department}</span>
+              </td>
+              <td>
+                <span class="text-muted" style="font-size: 0.85rem;">${c.phone}</span>
+              </td>
+              <td>
+                <span class="badge" style="background: rgba(99,102,241,0.12); color: var(--primary);">${c.interviews.length} Session(s)</span>
+              </td>
+              <td>
+                ${getStatusBadge(latestInterview.status)}
+              </td>
+              <td style="text-align: right;">
+                <button class="btn btn-sm btn-outline view-cand-btn" data-email="${c.email}">
+                  View Profile
+                </button>
+              </td>
+            </tr>
+          `;
+        }).join('');
+
+        if (window.lucide) window.lucide.createIcons({ root: tbody });
+
+        document.querySelectorAll('.view-cand-btn').forEach(btn => {
+          btn.addEventListener('click', () => {
+            const email = btn.getAttribute('data-email');
+            const cand = candMap.get(email.toLowerCase());
+            if (cand) showCandidateModal(cand);
+          });
+        });
+      }
+
+      function showCandidateModal(c) {
+        const modal = document.getElementById('candidate-modal');
+        const titleElem = document.getElementById('cand-modal-title');
+        const bodyElem = document.getElementById('cand-modal-body');
+
+        titleElem.textContent = `${c.name} – Candidate Dossier`;
+
+        bodyElem.innerHTML = `
+          <div class="modal-grid-2" style="margin-bottom: 24px; font-size: 0.88rem; background: rgba(255,255,255,0.02); padding: 16px; border-radius: var(--radius-md); border: 1px solid var(--border);">
+            <div><span class="text-muted">Email:</span> ${c.email}</div>
+            <div><span class="text-muted">Phone:</span> ${c.phone}</div>
+            <div><span class="text-muted">Target Position:</span> ${c.position}</div>
+            <div><span class="text-muted">Department:</span> ${c.department}</div>
+          </div>
+
+          <h4 style="font-size: 0.95rem; margin-bottom: 12px; color: var(--secondary);">Interview Evaluation History</h4>
+          <div style="display: flex; flex-direction: column; gap: 12px;">
+            ${c.interviews.map(i => {
+              const report = window.interviewService.getReport(i.interviewId);
+              return `
+                <div style="background-color: var(--bg-main); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 14px;">
+                  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                    <div style="font-weight: 600;">${i.interviewType} (${i.scheduledDate})</div>
+                    <div>${getStatusBadge(i.status)}</div>
+                  </div>
+                  <div style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 8px;">
+                    Interviewer: ${i.interviewerName} · Session ID: ${i.interviewId}
+                  </div>
+                  ${report ? `
+                    <div style="font-size: 0.82rem; padding: 8px 10px; background: rgba(16,185,129,0.08); border-radius: 4px; border: 1px solid rgba(16,185,129,0.2);">
+                      <strong>Evaluation Verdict:</strong> <span style="color: var(--success); font-weight: 700;">${report.finalDecision}</span>
+                      · Overall Rating: <strong>${report.ratings?.overall || '4.5'}/5.0</strong>
+                    </div>
+                  ` : `
+                    <div style="font-size: 0.8rem; color: var(--text-muted);">Evaluation report pending completion.</div>
+                  `}
+                </div>
+              `;
+            }).join('')}
+          </div>
+        `;
+
+        modal.classList.add('active');
+        if (window.lucide) window.lucide.createIcons();
+
+        document.getElementById('close-cand-modal-btn').addEventListener('click', () => modal.classList.remove('active'));
+        document.getElementById('close-cand-modal-footer').addEventListener('click', () => modal.classList.remove('active'));
+      }
+
+      searchInput.addEventListener('input', renderCandidates);
+      deptFilter.addEventListener('change', renderCandidates);
+      window.interviewService.onSync(renderCandidates);
+
+      renderCandidates();
+    });
+
+    function getStatusBadge(status) {
+      switch (status) {
+        case 'In Progress':
+          return `<span class="badge badge-in-progress"><span class="badge-dot"></span>In Progress</span>`;
+        case 'Joined':
+          return `<span class="badge badge-live"><span class="badge-dot"></span>Joined</span>`;
+        case 'Scheduled':
+          return `<span class="badge badge-scheduled"><span class="badge-dot"></span>Scheduled</span>`;
+        case 'Completed':
+          return `<span class="badge badge-completed"><span class="badge-dot"></span>Completed</span>`;
+        case 'Cancelled':
+          return `<span class="badge badge-cancelled"><span class="badge-dot"></span>Cancelled</span>`;
+        default:
+          return `<span class="badge">${status}</span>`;
+      }
+    }
+  </script>
+</body>
+</html>
+

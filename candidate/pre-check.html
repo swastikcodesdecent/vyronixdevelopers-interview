@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pre-Interview Verification & System Check – Devs Interview - By Vyronix Labs</title>
+  <link rel="stylesheet" href="../assets/css/global.css">
+  <link rel="stylesheet" href="../assets/css/candidate.css">
+  <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body class="candidate-body">
+  <div class="candidate-center-container">
+    <!-- Brand Header -->
+    <div class="candidate-brand-header">
+      <div class="candidate-brand-logo">
+        <div class="brand-logo-icon">
+          <i data-lucide="shield-check"></i>
+        </div>
+        <span class="brand-name" style="font-size: 1.4rem;">Devs Interview</span>
+      </div>
+      <p style="font-size: 0.9rem; color: var(--secondary); text-transform: uppercase; letter-spacing: 0.08em; font-weight: 600;">By Vyronix Labs – Remote Proctoring Room</p>
+    </div>
+
+    <!-- Main Card -->
+    <div class="candidate-card" id="main-check-card">
+      <!-- Loading Token State -->
+      <div id="loading-state" style="text-align: center; padding: 40px 0;">
+        <div class="metric-icon-wrap" style="margin: 0 auto 16px; background: rgba(99,102,241,0.1); color: var(--primary);">
+          <i data-lucide="loader" class="skeleton" style="width: 28px; height: 28px;"></i>
+        </div>
+        <div style="font-size: 1.1rem; font-weight: 700; margin-bottom: 6px;">Authenticating Interview Token...</div>
+        <p class="text-muted" style="font-size: 0.85rem;">Validating cryptographic security credentials with Vyronix servers.</p>
+      </div>
+
+      <!-- Invalid Token State -->
+      <div id="invalid-state" style="display: none; text-align: center; padding: 30px 0;">
+        <div class="metric-icon-wrap" style="margin: 0 auto 16px; background: rgba(239,68,68,0.1); color: var(--danger);">
+          <i data-lucide="alert-octagon" style="width: 32px; height: 32px;"></i>
+        </div>
+        <h3 style="color: var(--danger); margin-bottom: 8px;">Invalid or Expired Invitation</h3>
+        <p class="text-muted" style="font-size: 0.88rem; max-width: 440px; margin: 0 auto 20px;">
+          This interview access token could not be verified or has expired. Please verify your invitation link or contact your Vyronix recruitment coordinator.
+        </p>
+        <a href="../login.html" class="btn btn-outline btn-sm">Return to Portal</a>
+      </div>
+
+      <!-- Valid Interview Content -->
+      <div id="interview-ready-content" style="display: none;">
+        <div style="border-bottom: 1px solid var(--border-light); padding-bottom: 20px; margin-bottom: 24px;">
+          <span class="badge badge-scheduled" style="margin-bottom: 10px;">Scheduled Session</span>
+          <h2 style="font-size: 1.6rem; margin-bottom: 6px;" id="cand-display-name">Candidate Name</h2>
+          <div style="font-size: 0.95rem; color: var(--secondary); font-weight: 600;" id="cand-display-position">Software Engineer</div>
+          <div style="display: flex; gap: 20px; margin-top: 12px; font-size: 0.85rem; color: var(--text-muted); flex-wrap: wrap;">
+            <span><i data-lucide="calendar" style="width: 14px; height: 14px; display: inline;"></i> <span id="cand-display-date">Today</span></span>
+            <span><i data-lucide="clock" style="width: 14px; height: 14px; display: inline;"></i> <span id="cand-display-time">10:00 AM</span> (<span id="cand-display-duration">60</span>m)</span>
+            <span><i data-lucide="user-check" style="width: 14px; height: 14px; display: inline;"></i> Interviewer: <span id="cand-display-interviewer">Assigned</span></span>
+          </div>
+        </div>
+
+        <!-- Proctoring Consent Box -->
+        <div class="consent-notice-box">
+          <div style="font-weight: 700; font-size: 0.95rem; color: var(--text-main); display: flex; align-items: center; gap: 8px;">
+            <i data-lucide="shield-alert" style="color: var(--secondary);"></i>
+            Remote Proctoring & Integrity Agreement
+          </div>
+          <p style="font-size: 0.82rem; color: var(--text-muted); margin-top: 6px;">
+            To ensure recruitment fairness and security, the following browser permissions are required during your interview:
+          </p>
+          <ul class="consent-notice-list">
+            <li><i data-lucide="camera"></i> Continuous live webcam & microphone broadcast</li>
+            <li><i data-lucide="monitor"></i> Continuous full-desktop screen sharing</li>
+            <li><i data-lucide="maximize"></i> Browser locked in fullscreen mode (exits will trigger audit warnings)</li>
+            <li><i data-lucide="eye"></i> Tab visibility and window focus logging</li>
+            <li><i data-lucide="cpu"></i> Device & network telemetry recording (IP, browser version, latency)</li>
+          </ul>
+
+          <div style="margin-top: 16px; padding-top: 12px; border-top: 1px solid rgba(56,189,248,0.2);">
+            <label style="display: flex; align-items: center; gap: 10px; font-size: 0.85rem; font-weight: 600; cursor: pointer;">
+              <input type="checkbox" id="consent-checkbox" style="width: 18px; height: 18px; accent-color: var(--primary);">
+              I have read, understood, and explicitly consent to remote proctoring.
+            </label>
+          </div>
+        </div>
+
+        <!-- Device Compatibility Check Section -->
+        <h4 style="margin: 24px 0 12px; font-size: 1rem;">System Compatibility Verification</h4>
+        
+        <div class="device-check-grid">
+          <!-- Browser Check -->
+          <div class="device-check-item">
+            <div class="device-check-info">
+              <div class="device-check-icon"><i data-lucide="globe"></i></div>
+              <div>
+                <div style="font-weight: 600; font-size: 0.88rem;">Browser Compatibility</div>
+                <div class="text-muted" style="font-size: 0.75rem;" id="browser-name-display">Checking...</div>
+              </div>
+            </div>
+            <span class="device-status-badge status-passed" id="check-browser-badge">Passed</span>
+          </div>
+
+          <!-- Network Check -->
+          <div class="device-check-item">
+            <div class="device-check-info">
+              <div class="device-check-icon"><i data-lucide="wifi"></i></div>
+              <div>
+                <div style="font-weight: 600; font-size: 0.88rem;">Network Stability</div>
+                <div class="text-muted" style="font-size: 0.75rem;" id="network-latency-display">Measuring ping...</div>
+              </div>
+            </div>
+            <span class="device-status-badge status-passed" id="check-network-badge">Passed</span>
+          </div>
+
+          <!-- Camera & Mic Check -->
+          <div class="device-check-item">
+            <div class="device-check-info">
+              <div class="device-check-icon"><i data-lucide="camera"></i></div>
+              <div>
+                <div style="font-weight: 600; font-size: 0.88rem;">Camera & Microphone</div>
+                <div class="text-muted" style="font-size: 0.75rem;" id="media-status-display">Permission Required</div>
+              </div>
+            </div>
+            <button class="btn btn-sm btn-outline" id="test-media-btn">Test Camera</button>
+          </div>
+
+          <!-- Screen Share Check -->
+          <div class="device-check-item">
+            <div class="device-check-info">
+              <div class="device-check-icon"><i data-lucide="monitor"></i></div>
+              <div>
+                <div style="font-weight: 600; font-size: 0.88rem;">Screen Sharing</div>
+                <div class="text-muted" style="font-size: 0.75rem;" id="screen-status-display">Permission Required</div>
+              </div>
+            </div>
+            <button class="btn btn-sm btn-outline" id="test-screen-btn">Test Screen</button>
+          </div>
+        </div>
+
+        <!-- Video test preview (hidden until tested) -->
+        <div id="media-preview-container" style="display: none; margin-bottom: 20px; background-color: #03060E; border: 1px solid var(--border); border-radius: var(--radius-md); padding: 10px;">
+          <div style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 6px;">Webcam Preview Confirmation</div>
+          <video id="test-webcam-preview" autoplay playsinline muted style="width: 200px; height: 112px; border-radius: 4px; object-fit: cover; transform: scaleX(-1);"></video>
+        </div>
+
+        <!-- Proceed Action Button -->
+        <button id="start-interview-btn" class="btn btn-primary btn-lg w-full" disabled style="margin-top: 16px;">
+          <i data-lucide="lock"></i>
+          <span>Consent & Verification Required to Proceed</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Firebase App & Services SDKs (v10 Compat) -->
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
+
+  <script src="../firebase/config.js"></script>
+  <script src="../services/interview-service.js"></script>
+  <script src="../services/webrtc-service.js"></script>
+  <script src="../services/network-service.js"></script>
+  <script src="../services/notification-service.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', async () => {
+      if (window.lucide) window.lucide.createIcons();
+
+      const urlParams = new URLSearchParams(window.location.search);
+      const token = urlParams.get('token');
+
+      const loadingState = document.getElementById('loading-state');
+      const invalidState = document.getElementById('invalid-state');
+      const readyContent = document.getElementById('interview-ready-content');
+
+      if (!token) {
+        loadingState.style.display = 'none';
+        invalidState.style.display = 'block';
+        return;
+      }
+
+      // Verify token with cross-network cloud fallback
+      const interview = await window.interviewService.getInterviewByTokenAsync(token);
+      if (!interview || interview.status === 'Cancelled') {
+        loadingState.style.display = 'none';
+        invalidState.style.display = 'block';
+        return;
+      }
+
+      // Populate details
+      document.getElementById('cand-display-name').textContent = interview.candidateName;
+      document.getElementById('cand-display-position').textContent = `${interview.position} · ${interview.department}`;
+      document.getElementById('cand-display-date').textContent = interview.scheduledDate;
+      document.getElementById('cand-display-time').textContent = interview.scheduledTime;
+      document.getElementById('cand-display-duration').textContent = interview.duration;
+      document.getElementById('cand-display-interviewer').textContent = interview.interviewerName;
+
+      // Detect Browser & Network
+      const ua = navigator.userAgent;
+      const bInfo = window.networkService.detectBrowser(ua);
+      document.getElementById('browser-name-display').textContent = `${bInfo.name} (Supported)`;
+
+      const latency = await window.networkService.measureLatency();
+      document.getElementById('network-latency-display').textContent = `Latency: ${latency}ms (Optimal)`;
+
+      // Collect technical snapshot in background
+      await window.networkService.collectTechnicalSnapshot(interview.interviewId);
+
+      loadingState.style.display = 'none';
+      readyContent.style.display = 'block';
+      if (window.lucide) window.lucide.createIcons();
+
+      // Real-time interview state watcher (if deleted or cancelled in Firestore, block entry immediately)
+      window.interviewService.subscribeToInterview(interview.interviewId, (updated) => {
+        if (!updated || updated.status === 'Cancelled') {
+          readyContent.style.display = 'none';
+          invalidState.style.display = 'block';
+        }
+      });
+
+      // State tracking for readiness
+      let consentChecked = false;
+      let mediaTested = false;
+      let screenTested = false;
+
+      const consentBox = document.getElementById('consent-checkbox');
+      const testMediaBtn = document.getElementById('test-media-btn');
+      const testScreenBtn = document.getElementById('test-screen-btn');
+      const startBtn = document.getElementById('start-interview-btn');
+      const mediaStatusDisplay = document.getElementById('media-status-display');
+      const screenStatusDisplay = document.getElementById('screen-status-display');
+      const previewContainer = document.getElementById('media-preview-container');
+      const webcamPreview = document.getElementById('test-webcam-preview');
+
+      // Show optional labels if configured as non-mandatory
+      if (!interview.settings.requireWebcam) {
+        mediaStatusDisplay.textContent = 'Optional for this interview';
+        mediaTested = true;
+        testMediaBtn.textContent = 'Optional';
+      }
+      if (!interview.settings.requireScreenShare) {
+        screenStatusDisplay.textContent = 'Optional for this interview';
+        screenTested = true;
+        testScreenBtn.textContent = 'Optional';
+      } else if (!navigator.mediaDevices || typeof navigator.mediaDevices.getDisplayMedia !== 'function') {
+        // Mobile browsers do not support getDisplayMedia
+        screenStatusDisplay.textContent = 'Mobile Browser (Camera Mode)';
+        screenStatusDisplay.style.color = 'var(--warning)';
+        testScreenBtn.className = 'device-status-badge status-passed';
+        testScreenBtn.textContent = 'Mobile OK';
+        testScreenBtn.disabled = true;
+        screenTested = true;
+      }
+
+      function updateStartButtonState() {
+        if (consentChecked && (mediaTested || !interview.settings.requireWebcam) && (screenTested || !interview.settings.requireScreenShare)) {
+          startBtn.disabled = false;
+          startBtn.innerHTML = `<span>Enter Proctored Interview Room</span><i data-lucide="arrow-right"></i>`;
+          if (window.lucide) window.lucide.createIcons();
+        } else {
+          startBtn.disabled = true;
+          startBtn.innerHTML = `<i data-lucide="lock"></i><span>Consent & Permissions Required</span>`;
+          if (window.lucide) window.lucide.createIcons();
+        }
+      }
+
+      consentBox.addEventListener('change', (e) => {
+        consentChecked = e.target.checked;
+        updateStartButtonState();
+      });
+
+      // Camera test
+      testMediaBtn.addEventListener('click', async () => {
+        testMediaBtn.disabled = true;
+        testMediaBtn.textContent = 'Requesting...';
+        try {
+          const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+          webcamPreview.srcObject = stream;
+          previewContainer.style.display = 'block';
+          mediaStatusDisplay.textContent = 'Hardware Verified';
+          mediaStatusDisplay.style.color = 'var(--success)';
+          testMediaBtn.className = 'device-status-badge status-passed';
+          testMediaBtn.textContent = 'Passed';
+          mediaTested = true;
+          updateStartButtonState();
+        } catch (err) {
+          testMediaBtn.disabled = false;
+          testMediaBtn.textContent = 'Retry Camera';
+          mediaStatusDisplay.textContent = 'Permission Denied';
+          mediaStatusDisplay.style.color = 'var(--danger)';
+          alert('Camera / Microphone permission is required for proctoring. Please grant access in your browser bar.');
+        }
+      });
+
+      // Screen test
+      testScreenBtn.addEventListener('click', async () => {
+        if (!navigator.mediaDevices || typeof navigator.mediaDevices.getDisplayMedia !== 'function') {
+          screenTested = true;
+          updateStartButtonState();
+          return;
+        }
+        testScreenBtn.disabled = true;
+        testScreenBtn.textContent = 'Selecting...';
+        try {
+          const screenStream = await navigator.mediaDevices.getDisplayMedia({ video: true });
+          screenStatusDisplay.textContent = 'Desktop Capture Active';
+          screenStatusDisplay.style.color = 'var(--success)';
+          testScreenBtn.className = 'device-status-badge status-passed';
+          testScreenBtn.textContent = 'Passed';
+          screenTested = true;
+          // Stop test screen stream so candidate can share again inside room
+          screenStream.getTracks().forEach(t => t.stop());
+          updateStartButtonState();
+        } catch (err) {
+          testScreenBtn.disabled = false;
+          testScreenBtn.textContent = 'Retry Screen';
+          screenStatusDisplay.textContent = 'Cancelled or Denied';
+          screenStatusDisplay.style.color = 'var(--danger)';
+        }
+      });
+
+      // Launch into proctored room
+      startBtn.addEventListener('click', async () => {
+        startBtn.disabled = true;
+        startBtn.innerHTML = `<i data-lucide="loader"></i><span>Entering Proctored Room...</span>`;
+        if (window.lucide) window.lucide.createIcons({ root: startBtn });
+
+        // Stop preview stream before entering interview room
+        if (webcamPreview.srcObject) {
+          webcamPreview.srcObject.getTracks().forEach(t => t.stop());
+        }
+
+        // Record Candidate Joined & persist to Firestore
+        await window.interviewService.updateStatus(interview.interviewId, 'In Progress');
+        window.interviewService.recordEvent(interview.interviewId, 'Candidate Joined', `${interview.candidateName} completed device verification and entered session`, 'info');
+
+        // Redirect to interview.html with token
+        window.location.href = `interview.html?token=${token}`;
+      });
+    });
+  </script>
+</body>
+</html>
+

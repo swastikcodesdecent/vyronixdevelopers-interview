@@ -1,0 +1,495 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Interview Reports & Evaluation – Devs Interview - By Vyronix Labs</title>
+  <link rel="stylesheet" href="../assets/css/global.css">
+  <link rel="stylesheet" href="../assets/css/dashboard.css">
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <style>
+    @media print {
+      body {
+        background-color: #FFFFFF !important;
+        color: #000000 !important;
+      }
+      .sidebar, .topbar, #report-selector-bar, .no-print {
+        display: none !important;
+      }
+      .main-wrapper {
+        margin-left: 0 !important;
+      }
+      .content-body {
+        padding: 0 !important;
+      }
+      .card {
+        background: #FFFFFF !important;
+        color: #000000 !important;
+        border: 1px solid #CCCCCC !important;
+        box-shadow: none !important;
+      }
+      .text-main, h1, h2, h3, h4 {
+        color: #000000 !important;
+      }
+      .text-muted {
+        color: #555555 !important;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="app-layout">
+    <aside class="sidebar" id="sidebar"></aside>
+
+    <div class="main-wrapper">
+      <header class="topbar">
+        <div class="topbar-left">
+          <button class="mobile-menu-btn" id="mobile-menu-btn" title="Toggle Menu">
+            <i data-lucide="menu"></i>
+          </button>
+          <h2 class="page-title">
+            <i data-lucide="file-text" style="color: var(--primary);"></i>
+            Candidate Evaluation & Proctoring Audit Report
+          </h2>
+        </div>
+        <div class="topbar-right">
+          <button class="btn btn-secondary btn-sm" id="print-report-btn">
+            <i data-lucide="printer"></i> Print / Export PDF
+          </button>
+        </div>
+      </header>
+
+      <main class="content-body">
+        <!-- Report Selector Bar -->
+        <div class="card no-print" id="report-selector-bar" style="margin-bottom: 24px; padding: 16px 20px;">
+          <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px;">
+            <div style="display: flex; align-items: center; gap: 12px;">
+              <label for="report-select-interview" style="font-weight: 600; font-size: 0.88rem;">Select Interview Session:</label>
+              <select id="report-select-interview" class="form-select" style="max-width: 340px;"></select>
+            </div>
+            <div id="save-status-msg" style="display: none; font-size: 0.85rem; color: var(--success); font-weight: 600;">
+              <i data-lucide="check-circle" style="width: 14px; height: 14px; display: inline;"></i> Report Saved to Database
+            </div>
+          </div>
+        </div>
+
+        <!-- Official Report Paper Container -->
+        <div class="card" id="printable-report-card" style="max-width: 960px; margin: 0 auto; padding: 36px;">
+          <!-- Organization Header -->
+          <div style="display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 2px solid var(--border); padding-bottom: 20px; margin-bottom: 28px;">
+            <div>
+              <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 4px;">
+                <div class="brand-logo-icon" style="width: 32px; height: 32px;">
+                  <i data-lucide="shield-check" style="width: 18px; height: 18px;"></i>
+                </div>
+                <h2 style="font-size: 1.5rem; letter-spacing: -0.02em;">Devs Interview - By Vyronix Labs</h2>
+              </div>
+              <div style="font-size: 0.8rem; color: var(--secondary); text-transform: uppercase; letter-spacing: 0.08em; font-weight: 700;">
+                Official Digital Interview & Proctoring Audit Dossier
+              </div>
+            </div>
+
+            <div style="text-align: right;">
+              <div style="font-size: 0.75rem; text-transform: uppercase; color: var(--text-muted); font-weight: 700;">Report Reference</div>
+              <div style="font-family: monospace; font-size: 0.95rem; font-weight: 700; color: var(--primary);" id="rep-id-display">--</div>
+              <div style="font-size: 0.78rem; color: var(--text-muted); margin-top: 2px;" id="rep-generated-date">--</div>
+            </div>
+          </div>
+
+          <!-- Section 1: Candidate & Session Details -->
+          <div style="margin-bottom: 28px;">
+            <h4 style="color: var(--secondary); font-size: 0.95rem; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 14px;">
+              1. Candidate & Interview Particulars
+            </h4>
+            <div class="report-grid-3" style="background-color: rgba(255,255,255,0.02); padding: 18px; border-radius: var(--radius-md); border: 1px solid var(--border); font-size: 0.88rem;">
+              <div>
+                <div class="text-muted" style="font-size: 0.75rem;">Candidate Full Name</div>
+                <strong id="rep-cand-name">--</strong>
+              </div>
+              <div>
+                <div class="text-muted" style="font-size: 0.75rem;">Email Address</div>
+                <span id="rep-cand-email">--</span>
+              </div>
+              <div>
+                <div class="text-muted" style="font-size: 0.75rem;">Target Position</div>
+                <span id="rep-cand-position">--</span>
+              </div>
+              <div>
+                <div class="text-muted" style="font-size: 0.75rem;">Department</div>
+                <span id="rep-cand-dept">--</span>
+              </div>
+              <div>
+                <div class="text-muted" style="font-size: 0.75rem;">Assigned Interviewer</div>
+                <span id="rep-interviewer-name">--</span>
+              </div>
+              <div>
+                <div class="text-muted" style="font-size: 0.75rem;">Scheduled Date & Duration</div>
+                <span id="rep-schedule-time">--</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Section 2: Technical Diagnostics & Network Intelligence -->
+          <div style="margin-bottom: 28px;">
+            <h4 style="color: var(--secondary); font-size: 0.95rem; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 14px;">
+              2. Candidate Client & Network Telemetry
+            </h4>
+            <div class="report-grid-3" style="background-color: rgba(255,255,255,0.02); padding: 18px; border-radius: var(--radius-md); border: 1px solid var(--border); font-size: 0.88rem;">
+              <div>
+                <div class="text-muted" style="font-size: 0.75rem;">Public IP & ASN</div>
+                <span id="rep-tech-ip" style="font-family: monospace; font-weight: 600;">--</span>
+              </div>
+              <div>
+                <div class="text-muted" style="font-size: 0.75rem;">ISP / Organization</div>
+                <span id="rep-tech-isp">--</span>
+              </div>
+              <div>
+                <div class="text-muted" style="font-size: 0.75rem;">Operating System</div>
+                <span id="rep-tech-os">--</span>
+              </div>
+              <div>
+                <div class="text-muted" style="font-size: 0.75rem;">Browser Client</div>
+                <span id="rep-tech-browser">--</span>
+              </div>
+              <div>
+                <div class="text-muted" style="font-size: 0.75rem;">Screen Resolution</div>
+                <span id="rep-tech-screen">--</span>
+              </div>
+              <div>
+                <div class="text-muted" style="font-size: 0.75rem;">Measured Latency</div>
+                <span id="rep-tech-latency" style="color: var(--success); font-weight: 600;">--</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Section 3: Proctoring Summary & Integrity Index -->
+          <div style="margin-bottom: 28px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; flex-wrap: wrap; gap: 8px;">
+              <h4 style="color: var(--secondary); font-size: 0.95rem; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0;">
+                3. Remote Proctoring Integrity Audit
+              </h4>
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <span style="font-size: 0.82rem; font-weight: 600;">Session Integrity Score:</span>
+                <span class="badge badge-in-progress" id="rep-integrity-score" style="font-size: 0.85rem; padding: 4px 10px;">100%</span>
+              </div>
+            </div>
+
+            <div class="report-grid-4">
+              <div style="background-color: var(--bg-main); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 14px; text-align: center;">
+                <div style="font-size: 1.4rem; font-weight: 800; color: var(--text-main);" id="rep-cnt-fullscreen">0</div>
+                <div class="text-muted" style="font-size: 0.75rem; margin-top: 2px;">Fullscreen Exits</div>
+              </div>
+
+              <div style="background-color: var(--bg-main); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 14px; text-align: center;">
+                <div style="font-size: 1.4rem; font-weight: 800; color: var(--text-main);" id="rep-cnt-tabs">0</div>
+                <div class="text-muted" style="font-size: 0.75rem; margin-top: 2px;">Tab Switches</div>
+              </div>
+
+              <div style="background-color: var(--bg-main); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 14px; text-align: center;">
+                <div style="font-size: 1.4rem; font-weight: 800; color: var(--text-main);" id="rep-cnt-focus">0</div>
+                <div class="text-muted" style="font-size: 0.75rem; margin-top: 2px;">Focus Loss Events</div>
+              </div>
+
+              <div style="background-color: var(--bg-main); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 14px; text-align: center;">
+                <div style="font-size: 1.4rem; font-weight: 800; color: var(--text-main);" id="rep-cnt-warnings">0</div>
+                <div class="text-muted" style="font-size: 0.75rem; margin-top: 2px;">Warnings Issued</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Section 4: Interviewer Evaluation & Decision Form -->
+          <div style="border-top: 1px solid var(--border); padding-top: 24px;">
+            <h4 style="color: var(--secondary); font-size: 0.95rem; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 16px;">
+              4. Interviewer Evaluation Rubric & Decision
+            </h4>
+
+            <form id="evaluation-form">
+              <div class="report-grid-2" style="margin-bottom: 20px;">
+                <!-- Technical Rating -->
+                <div class="form-group" style="margin-bottom: 0;">
+                  <div style="display: flex; justify-content: space-between; margin-bottom: 6px;">
+                    <label class="form-label" style="margin-bottom: 0;">Technical Knowledge & Execution</label>
+                    <span id="rate-tech-val" style="font-weight: 700; color: var(--secondary);">4 / 5</span>
+                  </div>
+                  <input type="range" id="rate-tech" min="1" max="5" value="4" class="form-input" style="padding: 0;">
+                </div>
+
+                <!-- Problem Solving -->
+                <div class="form-group" style="margin-bottom: 0;">
+                  <div style="display: flex; justify-content: space-between; margin-bottom: 6px;">
+                    <label class="form-label" style="margin-bottom: 0;">Problem-Solving & System Design</label>
+                    <span id="rate-prob-val" style="font-weight: 700; color: var(--secondary);">5 / 5</span>
+                  </div>
+                  <input type="range" id="rate-prob" min="1" max="5" value="5" class="form-input" style="padding: 0;">
+                </div>
+
+                <!-- Communication Skills -->
+                <div class="form-group" style="margin-bottom: 0;">
+                  <div style="display: flex; justify-content: space-between; margin-bottom: 6px;">
+                    <label class="form-label" style="margin-bottom: 0;">Communication & Articulation</label>
+                    <span id="rate-comm-val" style="font-weight: 700; color: var(--secondary);">4 / 5</span>
+                  </div>
+                  <input type="range" id="rate-comm" min="1" max="5" value="4" class="form-input" style="padding: 0;">
+                </div>
+
+                <!-- Subject Knowledge -->
+                <div class="form-group" style="margin-bottom: 0;">
+                  <div style="display: flex; justify-content: space-between; margin-bottom: 6px;">
+                    <label class="form-label" style="margin-bottom: 0;">Subject Domain Proficiency</label>
+                    <span id="rate-subj-val" style="font-weight: 700; color: var(--secondary);">5 / 5</span>
+                  </div>
+                  <input type="range" id="rate-subj" min="1" max="5" value="5" class="form-input" style="padding: 0;">
+                </div>
+              </div>
+
+              <!-- Notes / Written Evaluation -->
+              <div class="form-group">
+                <label class="form-label" for="eval-notes">Interviewer Written Appraisal & Technical Feedback</label>
+                <textarea id="eval-notes" class="form-textarea" rows="4" placeholder="Detail candidate's strengths, architectural insights, problem decomposition, and areas of concern..."></textarea>
+              </div>
+
+              <!-- Final Recommendation -->
+              <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px; margin-top: 24px; padding-top: 16px; border-top: 1px solid var(--border-light);">
+                <div style="display: flex; align-items: center; gap: 14px;">
+                  <label class="form-label" for="eval-decision" style="margin-bottom: 0;">Final Recruitment Recommendation:</label>
+                  <select id="eval-decision" class="form-select" style="width: 180px;">
+                    <option value="Selected">Selected</option>
+                    <option value="Further Review">Further Review</option>
+                    <option value="On Hold">On Hold</option>
+                    <option value="Rejected">Rejected</option>
+                  </select>
+                </div>
+
+                <button type="submit" id="save-report-btn" class="btn btn-primary no-print">
+                  <i data-lucide="check"></i> Save & Finalize Evaluation Report
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <!-- Firebase App & Services SDKs (v10 Compat) -->
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
+
+  <script src="../firebase/config.js"></script>
+  <script src="../services/interview-service.js"></script>
+  <script src="../services/auth-service.js"></script>
+  <script src="../services/network-service.js"></script>
+  <script src="../services/notification-service.js"></script>
+  <script src="../assets/js/app.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const user = window.authService.requireAuth();
+      if (!user) return;
+
+      const isAdmin = user.role === 'admin';
+      const selector = document.getElementById('report-select-interview');
+      const reportCardElem = document.getElementById('printable-report-card');
+      const originalReportHtml = reportCardElem.innerHTML;
+      const urlParams = new URLSearchParams(window.location.search);
+      const requestedId = urlParams.get('id');
+
+      function getPermittedInterviews() {
+        let list = window.interviewService.getInterviews();
+        if (!isAdmin) {
+          list = list.filter(i =>
+            i.interviewerId === 'both' ||
+            i.interviewerId === user.uid ||
+            (i.interviewerEmail && i.interviewerEmail.toLowerCase().includes(user.email.toLowerCase()))
+          );
+        }
+        return list;
+      }
+
+      function refreshReportsView(preserveId = null) {
+        const interviews = getPermittedInterviews();
+        if (interviews.length === 0) {
+          selector.innerHTML = '<option value="">No Interviews Available</option>';
+          reportCardElem.innerHTML = `
+            <div class="empty-state" style="padding: 60px 20px;">
+              <div class="empty-state-icon" style="width: 56px; height: 56px;"><i data-lucide="file-x"></i></div>
+              <div class="empty-state-title">No Candidate Reports Generated</div>
+              <p class="empty-state-desc">Interview reports and evaluation rubrics will appear here once candidate sessions are conducted.</p>
+              ${isAdmin ? `<a href="schedule.html" class="btn btn-primary btn-sm"><i data-lucide="plus"></i> Schedule Interview</a>` : ''}
+            </div>
+          `;
+          if (window.lucide) window.lucide.createIcons();
+          return;
+        }
+
+        if (!document.getElementById('rep-cand-name')) {
+          reportCardElem.innerHTML = originalReportHtml;
+          bindFormAndSliders();
+        }
+
+        const activeId = preserveId || selector.value || requestedId;
+        selector.innerHTML = interviews.map(i => `
+          <option value="${i.interviewId}" ${i.interviewId === activeId ? 'selected' : ''}>
+            ${i.candidateName} – ${i.position} (${i.status})
+          </option>
+        `).join('');
+
+        const selectedId = selector.value || interviews[0]?.interviewId;
+        if (selectedId) loadReport(selectedId);
+      }
+
+      function bindFormAndSliders() {
+        const rateTech = document.getElementById('rate-tech');
+        const rateProb = document.getElementById('rate-prob');
+        const rateComm = document.getElementById('rate-comm');
+        const rateSubj = document.getElementById('rate-subj');
+        if (!rateTech) return;
+
+        rateTech.addEventListener('input', () => document.getElementById('rate-tech-val').textContent = `${rateTech.value} / 5`);
+        rateProb.addEventListener('input', () => document.getElementById('rate-prob-val').textContent = `${rateProb.value} / 5`);
+        rateComm.addEventListener('input', () => document.getElementById('rate-comm-val').textContent = `${rateComm.value} / 5`);
+        rateSubj.addEventListener('input', () => document.getElementById('rate-subj-val').textContent = `${rateSubj.value} / 5`);
+
+        const form = document.getElementById('evaluation-form');
+        if (form) {
+          form.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const interviewId = selector.value;
+            const interview = window.interviewService.getInterviewById(interviewId);
+            if (!interview) return;
+
+            const reportPayload = {
+              reportId: `rep-${interview.interviewId}`,
+              interviewId: interview.interviewId,
+              candidateName: interview.candidateName,
+              position: interview.position,
+              interviewerName: user.name,
+              ratings: {
+                technical: parseInt(rateTech.value, 10),
+                problemSolving: parseInt(rateProb.value, 10),
+                communication: parseInt(rateComm.value, 10),
+                subjectKnowledge: parseInt(rateSubj.value, 10),
+                overall: ((parseInt(rateTech.value, 10) + parseInt(rateProb.value, 10) + parseInt(rateComm.value, 10) + parseInt(rateSubj.value, 10)) / 4).toFixed(1)
+              },
+              interviewerNotes: document.getElementById('eval-notes').value,
+              finalDecision: document.getElementById('eval-decision').value
+            };
+
+            window.interviewService.saveReport(reportPayload);
+
+            const saveMsg = document.getElementById('save-status-msg');
+            saveMsg.style.display = 'block';
+            setTimeout(() => saveMsg.style.display = 'none', 4000);
+
+            window.notificationService.showToast('Report Finalized', `Evaluation report saved for ${interview.candidateName}.`, 'success');
+          });
+        }
+      }
+
+      selector.addEventListener('change', () => {
+        loadReport(selector.value);
+      });
+
+      bindFormAndSliders();
+      refreshReportsView(requestedId);
+
+      window.interviewService.onSync(() => {
+        refreshReportsView(selector.value);
+      });
+
+      async function loadReport(interviewId) {
+        const interview = window.interviewService.getInterviewById(interviewId);
+        if (!interview) return;
+
+        document.getElementById('rep-id-display').textContent = `REP-${interview.interviewId.toUpperCase()}`;
+        document.getElementById('rep-generated-date').textContent = new Date().toISOString().split('T')[0];
+
+        // Candidate & session particulars
+        document.getElementById('rep-cand-name').textContent = interview.candidateName;
+        document.getElementById('rep-cand-email').textContent = interview.candidateEmail;
+        document.getElementById('rep-cand-position').textContent = interview.position;
+        document.getElementById('rep-cand-dept').textContent = interview.department;
+        document.getElementById('rep-interviewer-name').textContent = interview.interviewerName;
+        document.getElementById('rep-schedule-time').textContent = `${interview.scheduledDate} · ${interview.duration} Minutes`;
+
+        // Reset Telemetry display first, then load async
+        document.getElementById('rep-tech-ip').textContent = '--';
+        document.getElementById('rep-tech-isp').textContent = '--';
+        document.getElementById('rep-tech-os').textContent = '--';
+        document.getElementById('rep-tech-browser').textContent = '--';
+        document.getElementById('rep-tech-screen').textContent = '--';
+        document.getElementById('rep-tech-latency').textContent = '--';
+
+        const tech = await window.networkService.getTechnicalSnapshotAsync(interview.interviewId);
+        if (tech) {
+          document.getElementById('rep-tech-ip').textContent = `${tech.publicIP} (${tech.asn || 'N/A'})`;
+          document.getElementById('rep-tech-isp').textContent = tech.isp || 'Unknown ISP';
+          document.getElementById('rep-tech-os').textContent = tech.operatingSystem || 'Unknown OS';
+          document.getElementById('rep-tech-browser').textContent = tech.browser || 'Unknown Browser';
+          document.getElementById('rep-tech-screen').textContent = tech.screenResolution || 'Unknown';
+          document.getElementById('rep-tech-latency').textContent = tech.measuredLatency || '--';
+        }
+
+        // Proctoring Events
+        const events = window.interviewService.getEvents(interview.interviewId);
+        const fullscreenExits = events.filter(e => e.eventType.includes('Fullscreen Exit')).length;
+        const tabSwitches = events.filter(e => e.eventType.includes('Tab Switch')).length;
+        const focusLosses = events.filter(e => e.eventType.includes('Focus Lost')).length;
+        const totalWarnings = events.filter(e => e.severity === 'warning' || e.severity === 'danger').length;
+
+        document.getElementById('rep-cnt-fullscreen').textContent = fullscreenExits;
+        document.getElementById('rep-cnt-tabs').textContent = tabSwitches;
+        document.getElementById('rep-cnt-focus').textContent = focusLosses;
+        document.getElementById('rep-cnt-warnings').textContent = totalWarnings;
+
+        // Calculate Integrity using platform penalty settings
+        let penalty = 5;
+        try {
+          const cfg = JSON.parse(localStorage.getItem('vyronix_platform_settings') || '{}');
+          if (cfg.integrityPenalty) penalty = parseInt(cfg.integrityPenalty, 10);
+        } catch (e) {}
+
+        let integrity = Math.max(0, 100 - (fullscreenExits * penalty) - (tabSwitches * Math.max(2, penalty - 2)) - (totalWarnings * penalty));
+        document.getElementById('rep-integrity-score').textContent = `${integrity}%`;
+
+        const rateTech = document.getElementById('rate-tech');
+        const rateProb = document.getElementById('rate-prob');
+        const rateComm = document.getElementById('rate-comm');
+        const rateSubj = document.getElementById('rate-subj');
+        if (!rateTech) return;
+
+        // Check if report already exists, otherwise reset to defaults
+        const existingReport = window.interviewService.getReport(interview.interviewId);
+        if (existingReport) {
+          if (existingReport.ratings) {
+            rateTech.value = existingReport.ratings.technical || 4;
+            rateProb.value = existingReport.ratings.problemSolving || 4;
+            rateComm.value = existingReport.ratings.communication || 4;
+            rateSubj.value = existingReport.ratings.subjectKnowledge || 4;
+          }
+          document.getElementById('eval-notes').value = existingReport.interviewerNotes || '';
+          document.getElementById('eval-decision').value = existingReport.finalDecision || 'Strong Hire';
+        } else {
+          rateTech.value = 4;
+          rateProb.value = 4;
+          rateComm.value = 4;
+          rateSubj.value = 4;
+          document.getElementById('eval-notes').value = '';
+          document.getElementById('eval-decision').value = 'Strong Hire';
+        }
+        document.getElementById('rate-tech-val').textContent = `${rateTech.value} / 5`;
+        document.getElementById('rate-prob-val').textContent = `${rateProb.value} / 5`;
+        document.getElementById('rate-comm-val').textContent = `${rateComm.value} / 5`;
+        document.getElementById('rate-subj-val').textContent = `${rateSubj.value} / 5`;
+      }
+
+      // Print PDF action
+      document.getElementById('print-report-btn').addEventListener('click', () => {
+        window.print();
+      });
+    });
+  </script>
+</body>
+</html>
+

@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Interview Management – Devs Interview - By Vyronix Labs</title>
+  <link rel="stylesheet" href="../assets/css/global.css">
+  <link rel="stylesheet" href="../assets/css/dashboard.css">
+  <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body>
+  <div class="app-layout">
+    <aside class="sidebar" id="sidebar"></aside>
+
+    <div class="main-wrapper">
+      <header class="topbar">
+        <div class="topbar-left">
+          <button class="mobile-menu-btn" id="mobile-menu-btn" title="Toggle Menu">
+            <i data-lucide="menu"></i>
+          </button>
+          <h2 class="page-title">
+            <i data-lucide="calendar" style="color: var(--primary);"></i>
+            Interview Pipeline Management
+          </h2>
+        </div>
+        <div class="topbar-right">
+          <div style="position: relative;">
+            <button class="topbar-action-btn" id="notif-bell-btn">
+              <i data-lucide="bell"></i>
+              <span class="notification-count" id="notif-badge-count" style="display: none;">0</span>
+            </button>
+            <div class="notification-dropdown" id="notification-dropdown">
+              <div class="notification-header">
+                <span style="font-weight: 700; font-size: 0.9rem;">Audit Alerts</span>
+                <button class="btn btn-sm btn-outline" id="mark-all-read-btn">Clear All</button>
+              </div>
+              <ul class="notification-list" id="notification-list"></ul>
+            </div>
+          </div>
+          <a href="schedule.html" class="btn btn-primary btn-sm" id="topbar-schedule-btn">
+            <i data-lucide="plus"></i> Schedule Interview
+          </a>
+        </div>
+      </header>
+
+      <main class="content-body">
+        <!-- Filter and Search Bar -->
+        <div class="card" style="margin-bottom: 24px; padding: 18px 24px;">
+          <div class="filter-bar-inner" style="display: flex; gap: 16px; flex-wrap: wrap; align-items: center; justify-content: space-between;">
+            <div class="input-with-icon" style="flex: 1; min-width: 260px;">
+              <i data-lucide="search" class="input-icon"></i>
+              <input type="text" id="search-filter" class="form-input" placeholder="Search by candidate name, email, or position...">
+            </div>
+
+            <div class="filter-controls-group" style="display: flex; gap: 12px; flex-wrap: wrap;">
+              <select id="status-filter" class="form-select" style="width: 160px;">
+                <option value="ALL">All Statuses</option>
+                <option value="Scheduled">Scheduled</option>
+                <option value="Waiting">Waiting</option>
+                <option value="Joined">Joined</option>
+                <option value="In Progress">In Progress</option>
+                <option value="Completed">Completed</option>
+                <option value="Cancelled">Cancelled</option>
+                <option value="No Show">No Show</option>
+              </select>
+
+              <select id="department-filter" class="form-select" style="width: 180px;">
+                <option value="ALL">All Departments</option>
+                <option value="Frontend Developer">Frontend Developer</option>
+                <option value="Backend Developer">Backend Developer</option>
+                <option value="Cybersecurity">Cybersecurity</option>
+                <option value="IoT & Robotics">IoT & Robotics</option>
+                <option value="People & Talent">People & Talent</option>
+              </select>
+
+              <button class="btn btn-secondary btn-sm" id="reset-filters-btn" title="Reset Filters">
+                <i data-lucide="rotate-ccw"></i> Reset
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Interviews Table Card -->
+        <div class="card">
+          <div class="card-header">
+            <div>
+              <h3 class="card-title">Interviews Directory (<span id="results-count">0</span>)</h3>
+              <p class="card-subtitle">Active, scheduled, and past remote proctored interviews</p>
+            </div>
+          </div>
+
+          <div class="table-container">
+            <table class="table">
+              <thead>
+                <tr>
+                  <th>Candidate</th>
+                  <th>Position & Dept</th>
+                  <th>Assigned Interviewer</th>
+                  <th>Schedule</th>
+                  <th>Type</th>
+                  <th>Status</th>
+                  <th style="text-align: right;">Actions</th>
+                </tr>
+              </thead>
+              <tbody id="interviews-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <!-- Details / Reschedule Modal -->
+  <div class="modal-backdrop" id="details-modal">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3 class="card-title" id="modal-candidate-name">Interview Details</h3>
+        <button class="btn btn-icon btn-outline btn-sm" id="close-details-btn">&times;</button>
+      </div>
+      <div class="modal-body" id="details-modal-body"></div>
+      <div class="modal-footer" id="details-modal-footer"></div>
+    </div>
+  </div>
+
+  <!-- Firebase App & Services SDKs (v10 Compat) -->
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
+
+  <script src="../firebase/config.js"></script>
+  <script src="../services/interview-service.js"></script>
+  <script src="../services/auth-service.js"></script>
+  <script src="../services/notification-service.js"></script>
+  <script src="../assets/js/app.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const user = window.authService.requireAuth();
+      if (!user) return;
+
+      const isAdmin = user.role === 'admin';
+      const searchInput = document.getElementById('search-filter');
+      const statusSelect = document.getElementById('status-filter');
+      const deptSelect = document.getElementById('department-filter');
+      const resetBtn = document.getElementById('reset-filters-btn');
+      const tbody = document.getElementById('interviews-tbody');
+      const countElem = document.getElementById('results-count');
+
+      // Hide schedule button in topbar if interviewer
+      const topScheduleBtn = document.getElementById('topbar-schedule-btn');
+      if (topScheduleBtn && !isAdmin) topScheduleBtn.style.display = 'none';
+
+      function renderTable() {
+        let list = window.interviewService.getInterviews();
+
+        // Scope by role
+        if (!isAdmin) {
+          list = list.filter(i => 
+            i.interviewerId === 'both' ||
+            i.interviewerId === user.uid || 
+            (i.interviewerEmail && i.interviewerEmail.toLowerCase().includes(user.email.toLowerCase()))
+          );
+        }
+
+        // Apply filters
+        const q = searchInput.value.trim().toLowerCase();
+        const statusVal = statusSelect.value;
+        const deptVal = deptSelect.value;
+
+        if (q) {
+          list = list.filter(i =>
+            i.candidateName.toLowerCase().includes(q) ||
+            i.candidateEmail.toLowerCase().includes(q) ||
+            i.position.toLowerCase().includes(q) ||
+            i.interviewId.toLowerCase().includes(q)
+          );
+        }
+
+        if (statusVal !== 'ALL') {
+          list = list.filter(i => i.status === statusVal);
+        }
+
+        if (deptVal !== 'ALL') {
+          list = list.filter(i => i.department === deptVal);
+        }
+
+        countElem.textContent = list.length;
+
+        if (list.length === 0) {
+          tbody.innerHTML = `
+            <tr>
+              <td colspan="7">
+                <div class="empty-state">
+                  <div class="empty-state-icon"><i data-lucide="calendar-x"></i></div>
+                  <div class="empty-state-title">No matching interviews found</div>
+                  <p class="empty-state-desc">Try clearing filters or search criteria.</p>
+                </div>
+              </td>
+            </tr>
+          `;
+          if (window.lucide) window.lucide.createIcons({ root: tbody });
+          return;
+        }
+
+        tbody.innerHTML = list.map(item => {
+          const isLive = item.status === 'In Progress' || item.status === 'Joined';
+          const isCompleted = item.status === 'Completed';
+
+          return `
+            <tr>
+              <td>
+                <div style="font-weight: 600; color: var(--text-main);">${item.candidateName}</div>
+                <div class="text-muted" style="font-size: 0.78rem;">${item.candidateEmail}</div>
+                ${item.candidatePhone ? `<div class="text-muted" style="font-size: 0.74rem;">${item.candidatePhone}</div>` : ''}
+              </td>
+              <td>
+                <div style="font-size: 0.88rem; font-weight: 500;">${item.position}</div>
+                <div class="text-muted" style="font-size: 0.75rem;">${item.department}</div>
+              </td>
+              <td>
+                <div style="font-size: 0.85rem;">${item.interviewerName}</div>
+                <div class="text-muted" style="font-size: 0.75rem;">${item.interviewerEmail || ''}</div>
+              </td>
+              <td>
+                <div style="font-weight: 500;">${item.scheduledDate}</div>
+                <div class="text-muted" style="font-size: 0.78rem;">${item.scheduledTime} (${item.duration} min)</div>
+              </td>
+              <td>
+                <span style="font-size: 0.82rem; color: var(--secondary);">${item.interviewType}</span>
+              </td>
+              <td>
+                ${getStatusBadge(item.status)}
+              </td>
+              <td style="text-align: right;">
+                <div style="display: inline-flex; gap: 6px;">
+                  ${isLive ? `
+                    <a href="monitoring.html?id=${item.interviewId}" class="btn btn-sm btn-success" title="Join Live Proctoring">
+                      <i data-lucide="video"></i> Monitor
+                    </a>
+                  ` : ''}
+
+                  ${isCompleted ? `
+                    <a href="reports.html?id=${item.interviewId}" class="btn btn-sm btn-outline" title="View Evaluation Report">
+                      <i data-lucide="file-text"></i> Report
+                    </a>
+                  ` : ''}
+
+                  <button class="btn btn-sm btn-outline copy-link-btn" data-token="${item.token}" title="Copy Candidate Link">
+                    <i data-lucide="copy"></i>
+                  </button>
+
+                  <button class="btn btn-sm btn-secondary view-details-btn" data-id="${item.interviewId}">
+                    Details
+                  </button>
+                </div>
+              </td>
+            </tr>
+          `;
+        }).join('');
+
+        if (window.lucide) window.lucide.createIcons({ root: tbody });
+
+        // Bind copy link buttons
+        document.querySelectorAll('.copy-link-btn').forEach(btn => {
+          btn.addEventListener('click', async () => {
+            const token = btn.getAttribute('data-token');
+            const origin = window.location.origin + window.location.pathname.replace('/admin/interviews.html', '');
+            const candidateUrl = `${origin}/candidate/pre-check.html?token=${token}`;
+            if (navigator.clipboard && window.isSecureContext) {
+              await navigator.clipboard.writeText(candidateUrl).catch(() => {});
+            } else {
+              const ta = document.createElement('textarea');
+              ta.value = candidateUrl;
+              ta.style.position = 'fixed';
+              ta.style.left = '-9999px';
+              document.body.appendChild(ta);
+              ta.select();
+              try { document.execCommand('copy'); } catch (err) {}
+              document.body.removeChild(ta);
+            }
+            window.notificationService.showToast('Copied Link', 'Candidate interview URL copied to clipboard.', 'success');
+          });
+        });
+
+        // Bind details buttons
+        document.querySelectorAll('.view-details-btn').forEach(btn => {
+          btn.addEventListener('click', () => {
+            const id = btn.getAttribute('data-id');
+            showDetailsModal(id, isAdmin);
+          });
+        });
+      }
+
+      function showDetailsModal(interviewId, isAdmin) {
+        const item = window.interviewService.getInterviewById(interviewId);
+        if (!item) return;
+
+        const modal = document.getElementById('details-modal');
+        const nameElem = document.getElementById('modal-candidate-name');
+        const bodyElem = document.getElementById('details-modal-body');
+        const footerElem = document.getElementById('details-modal-footer');
+
+        nameElem.textContent = `${item.candidateName} – ${item.position}`;
+
+        const origin = window.location.origin + window.location.pathname.replace('/admin/interviews.html', '');
+        const candidateUrl = `${origin}/candidate/pre-check.html?token=${item.token}`;
+
+        bodyElem.innerHTML = `
+          <div class="modal-grid-2" style="margin-bottom: 20px; font-size: 0.88rem;">
+            <div><span class="text-muted">Interview ID:</span> <span style="font-family: monospace;">${item.interviewId}</span></div>
+            <div><span class="text-muted">Status:</span> ${getStatusBadge(item.status)}</div>
+            <div><span class="text-muted">Candidate Email:</span> ${item.candidateEmail}</div>
+            <div><span class="text-muted">Candidate Phone:</span> ${item.candidatePhone || 'N/A'}</div>
+            <div><span class="text-muted">Interviewer:</span> ${item.interviewerName}</div>
+            <div><span class="text-muted">Department:</span> ${item.department}</div>
+            <div><span class="text-muted">Date & Time:</span> ${item.scheduledDate} at ${item.scheduledTime}</div>
+            <div><span class="text-muted">Duration:</span> ${item.duration} minutes</div>
+          </div>
+
+          <div style="background-color: var(--bg-main); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 12px; margin-bottom: 20px;">
+            <div style="font-size: 0.74rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; margin-bottom: 4px;">Candidate Link</div>
+            <div style="font-family: monospace; font-size: 0.8rem; color: var(--secondary); word-break: break-all;">${candidateUrl}</div>
+          </div>
+
+          <div style="margin-bottom: 20px;">
+            <div style="font-size: 0.8rem; font-weight: 600; color: var(--text-main); margin-bottom: 6px;">Instructions / Brief</div>
+            <p style="font-size: 0.85rem; color: var(--text-muted);">${item.instructions || 'Standard assessment instructions applied.'}</p>
+          </div>
+
+          <div style="background: rgba(255,255,255,0.02); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 14px;">
+            <div style="font-size: 0.8rem; font-weight: 600; margin-bottom: 8px;">Proctoring Parameters</div>
+            <div style="display: flex; gap: 12px; flex-wrap: wrap; font-size: 0.78rem;">
+              <span class="badge ${item.settings.requireWebcam ? 'badge-in-progress' : 'badge-no-show'}">Webcam: ${item.settings.requireWebcam ? 'Mandatory' : 'Optional'}</span>
+              <span class="badge ${item.settings.requireScreenShare ? 'badge-in-progress' : 'badge-no-show'}">Screen Share: ${item.settings.requireScreenShare ? 'Mandatory' : 'Optional'}</span>
+              <span class="badge ${item.settings.requireFullscreen ? 'badge-in-progress' : 'badge-no-show'}">Fullscreen: ${item.settings.requireFullscreen ? 'Enforced' : 'Optional'}</span>
+              <span class="badge badge-scheduled">Max Warnings: ${item.settings.maxWarnings}</span>
+            </div>
+          </div>
+        `;
+
+        footerElem.innerHTML = `
+          <button class="btn btn-outline" id="close-modal-footer-btn">Close</button>
+          ${isAdmin ? `
+            <button class="btn btn-danger-outline" id="delete-interview-btn">Delete Permanently</button>
+          ` : ''}
+          ${item.status !== 'Cancelled' && item.status !== 'Completed' && isAdmin ? `
+            <button class="btn btn-secondary" id="cancel-interview-btn">Cancel Interview</button>
+          ` : ''}
+          <a href="monitoring.html?id=${item.interviewId}" class="btn btn-primary">Open Live Console</a>
+        `;
+
+        modal.classList.add('active');
+        if (window.lucide) window.lucide.createIcons();
+
+        document.getElementById('close-modal-footer-btn').addEventListener('click', () => modal.classList.remove('active'));
+        document.getElementById('close-details-btn').addEventListener('click', () => modal.classList.remove('active'));
+
+        const deleteBtn = document.getElementById('delete-interview-btn');
+        if (deleteBtn) {
+          deleteBtn.addEventListener('click', async () => {
+            if (confirm(`Permanently delete interview ${item.interviewId} (${item.candidateName}) from Firebase & Dashboard?`)) {
+              await window.interviewService.deleteInterview(item.interviewId);
+              modal.classList.remove('active');
+              window.notificationService.showToast('Interview Deleted', `Session ${item.interviewId} permanently deleted.`, 'info');
+              renderTable();
+            }
+          });
+        }
+
+        const cancelBtn = document.getElementById('cancel-interview-btn');
+        if (cancelBtn) {
+          cancelBtn.addEventListener('click', async () => {
+            if (confirm(`Are you sure you want to cancel the interview for ${item.candidateName}?`)) {
+              await window.interviewService.updateStatus(item.interviewId, 'Cancelled');
+              modal.classList.remove('active');
+              window.notificationService.showToast('Interview Cancelled', `Session ${item.interviewId} marked as cancelled.`, 'warning');
+              renderTable();
+            }
+          });
+        }
+      }
+
+      searchInput.addEventListener('input', renderTable);
+      statusSelect.addEventListener('change', renderTable);
+      deptSelect.addEventListener('change', renderTable);
+      resetBtn.addEventListener('click', () => {
+        searchInput.value = '';
+        statusSelect.value = 'ALL';
+        deptSelect.value = 'ALL';
+        renderTable();
+      });
+
+      window.interviewService.onSync(() => renderTable());
+      renderTable();
+    });
+
+    function getStatusBadge(status) {
+      switch (status) {
+        case 'In Progress':
+          return `<span class="badge badge-in-progress"><span class="badge-dot"></span>In Progress</span>`;
+        case 'Joined':
+          return `<span class="badge badge-live"><span class="badge-dot"></span>Joined</span>`;
+        case 'Scheduled':
+          return `<span class="badge badge-scheduled"><span class="badge-dot"></span>Scheduled</span>`;
+        case 'Completed':
+          return `<span class="badge badge-completed"><span class="badge-dot"></span>Completed</span>`;
+        case 'Cancelled':
+          return `<span class="badge badge-cancelled"><span class="badge-dot"></span>Cancelled</span>`;
+        case 'Waiting':
+          return `<span class="badge badge-waiting"><span class="badge-dot"></span>Waiting</span>`;
+        case 'No Show':
+          return `<span class="badge badge-no-show"><span class="badge-dot"></span>No Show</span>`;
+        default:
+          return `<span class="badge">${status}</span>`;
+      }
+    }
+  </script>
+</body>
+</html>
+

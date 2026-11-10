@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Interview Concluded – Devs Interview - By Vyronix Labs</title>
+  <link rel="stylesheet" href="../assets/css/global.css">
+  <link rel="stylesheet" href="../assets/css/candidate.css">
+  <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body class="candidate-body">
+  <div class="candidate-center-container">
+    <div class="candidate-brand-header">
+      <div class="candidate-brand-logo">
+        <div class="brand-logo-icon">
+          <i data-lucide="shield-check"></i>
+        </div>
+        <span class="brand-name" style="font-size: 1.4rem;">Devs Interview</span>
+      </div>
+      <p style="font-size: 0.9rem; color: var(--secondary); text-transform: uppercase; letter-spacing: 0.08em; font-weight: 600;">By Vyronix Labs – Remote Proctoring Room</p>
+    </div>
+
+    <div class="candidate-card" style="text-align: center; padding: 48px 36px;">
+      <div class="metric-icon-wrap" style="margin: 0 auto 20px; width: 68px; height: 68px; background: rgba(16,185,129,0.12); color: var(--success); border-radius: 50%;">
+        <i data-lucide="check-circle-2" style="width: 36px; height: 36px;"></i>
+      </div>
+
+      <h2 style="font-size: 1.8rem; margin-bottom: 8px;">Interview Completed</h2>
+      <p style="font-size: 0.95rem; color: var(--text-muted); max-width: 500px; margin: 0 auto 28px;">
+        Thank you for participating in the Vyronix technical evaluation. Your camera, screen broadcast, and proctoring telemetry have been safely terminated.
+      </p>
+
+      <div style="background-color: var(--bg-main); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 20px; max-width: 480px; margin: 0 auto 32px; text-align: left;">
+        <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+          <span class="text-muted" style="font-size: 0.85rem;">Candidate:</span>
+          <strong id="comp-candidate-name">Candidate Name</strong>
+        </div>
+        <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+          <span class="text-muted" style="font-size: 0.85rem;">Position:</span>
+          <span id="comp-candidate-role" style="color: var(--secondary); font-weight: 600;">Target Role</span>
+        </div>
+        <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+          <span class="text-muted" style="font-size: 0.85rem;">Status:</span>
+          <span class="badge badge-completed"><span class="badge-dot"></span>Session Finalized</span>
+        </div>
+        <div style="display: flex; justify-content: space-between;">
+          <span class="text-muted" style="font-size: 0.85rem;">Completion Timestamp:</span>
+          <span id="comp-timestamp" style="font-family: monospace; font-size: 0.82rem;">2026-11-09</span>
+        </div>
+      </div>
+
+      <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 24px;">
+        The recruitment team and your assigned interviewer will review your technical session and contact you regarding next steps. You may safely close this browser window.
+      </p>
+
+      <div style="display: flex; justify-content: center; gap: 14px;">
+        <a href="../login.html" class="btn btn-outline btn-sm">
+          <i data-lucide="arrow-left"></i> Vyronix Portal Home
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Firebase App & Services SDKs (v10 Compat) -->
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
+
+  <script src="../firebase/config.js"></script>
+  <script src="../services/interview-service.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', async () => {
+      if (window.lucide) window.lucide.createIcons();
+
+      const urlParams = new URLSearchParams(window.location.search);
+      const token = urlParams.get('token');
+      if (token) {
+        const interview = await window.interviewService.getInterviewByTokenAsync(token);
+        if (interview) {
+          document.getElementById('comp-candidate-name').textContent = interview.candidateName;
+          document.getElementById('comp-candidate-role').textContent = `${interview.position} · ${interview.department}`;
+        }
+      }
+      document.getElementById('comp-timestamp').textContent = new Date().toLocaleString();
+    });
+  </script>
+</body>
+</html>
+

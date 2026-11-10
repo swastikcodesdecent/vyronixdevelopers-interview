@@ -1,0 +1,43 @@
+{
+  "rules": {
+    "interviews": {
+      ".read": true,
+      ".write": true
+    },
+    "interviews_by_token": {
+      ".read": true,
+      ".write": true
+    },
+    "signals": {
+      "$roomId": {
+        ".read": true,
+        ".write": true,
+        ".indexOn": [
+          "timestamp"
+        ]
+      }
+    },
+    "presence": {
+      "$interviewId": {
+        ".read": true,
+        ".write": true
+      }
+    },
+    "questions": {
+      "$interviewId": {
+        ".read": true,
+        ".write": true
+      }
+    },
+    "proctoring_alerts": {
+      "$interviewId": {
+        ".read": true,
+        ".write": true
+      }
+    },
+    "sync_events": {
+      ".read": true,
+      ".write": true
+    }
+  }
+}

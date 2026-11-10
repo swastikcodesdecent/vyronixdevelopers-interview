@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Devs Interview - By Vyronix Labs</title>
+  <script>
+    // Immediate routing: candidate joins directly via unique token link;
+    // all root access redirects directly to portal login / dashboard.
+    const session = localStorage.getItem('vyronix_auth_session');
+    if (session) {
+      window.location.replace('admin/dashboard.html');
+    } else {
+      window.location.replace('login.html');
+    }
+  </script>
+</head>
+<body style="background-color: #0B1020; color: #F8FAFC; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; font-family: sans-serif;">
+  <p style="color: #94A3B8;">Redirecting to Devs Interview portal...</p>
+</body>
+</html>

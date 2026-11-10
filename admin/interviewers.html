@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Interviewer Management – Devs Interview - By Vyronix Labs</title>
+  <link rel="stylesheet" href="../assets/css/global.css">
+  <link rel="stylesheet" href="../assets/css/dashboard.css">
+  <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body>
+  <div class="app-layout">
+    <aside class="sidebar" id="sidebar"></aside>
+
+    <div class="main-wrapper">
+      <header class="topbar">
+        <div class="topbar-left">
+          <button class="mobile-menu-btn" id="mobile-menu-btn" title="Toggle Menu">
+            <i data-lucide="menu"></i>
+          </button>
+          <h2 class="page-title">
+            <i data-lucide="user-check" style="color: var(--primary);"></i>
+            Interviewer & Staff Administration
+          </h2>
+          <span class="badge" style="background: rgba(99,102,241,0.15); color: var(--primary);">Admin Exclusive</span>
+        </div>
+        <div class="topbar-right">
+          <button class="btn btn-primary btn-sm" id="open-add-interviewer-btn">
+            <i data-lucide="user-plus"></i> Add New Interviewer
+          </button>
+        </div>
+      </header>
+
+      <main class="content-body">
+        <div class="card" style="margin-bottom: 24px;">
+          <div class="card-header">
+            <div>
+              <h3 class="card-title">Authorized Evaluation Personnel</h3>
+              <p class="card-subtitle">Manage internal interviewer credentials, operational scopes, and assigned session loads</p>
+            </div>
+          </div>
+
+          <div class="table-container">
+            <table class="table">
+              <thead>
+                <tr>
+                  <th>Interviewer</th>
+                  <th>Role</th>
+                  <th>Title & Department</th>
+                  <th>Assigned Sessions</th>
+                  <th>Account Status</th>
+                  <th style="text-align: right;">Actions</th>
+                </tr>
+              </thead>
+              <tbody id="interviewers-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <!-- Add Interviewer Modal -->
+  <div class="modal-backdrop" id="add-interviewer-modal">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3 class="card-title">Provision New Interviewer Account</h3>
+        <button class="btn btn-icon btn-outline btn-sm" id="close-add-modal">&times;</button>
+      </div>
+      <form id="add-interviewer-form">
+        <div class="modal-body">
+          <div class="form-group">
+            <label class="form-label" for="new-int-name">Full Name <span class="required">*</span></label>
+            <input type="text" id="new-int-name" class="form-input" placeholder="e.g. Liam Gallagher" required>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="new-int-email">Corporate Email <span class="required">*</span></label>
+            <input type="email" id="new-int-email" class="form-input" placeholder="liam.gallagher@vyronix.com" required>
+          </div>
+
+          <div class="grid-2">
+            <div class="form-group">
+              <label class="form-label" for="new-int-role">System Role <span class="required">*</span></label>
+              <select id="new-int-role" class="form-select" required>
+                <option value="interviewer" selected>Interviewer (Assigned Sessions Only)</option>
+                <option value="admin">Administrator (Complete Access)</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="new-int-dept">Department <span class="required">*</span></label>
+              <select id="new-int-dept" class="form-select" required>
+                <option value="Product Engineering">Product Engineering</option>
+                <option value="Infrastructure & Cloud">Infrastructure & Cloud</option>
+                <option value="Cybersecurity">Cybersecurity</option>
+                <option value="Data & AI Systems">Data & AI Systems</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="new-int-title">Job Title <span class="required">*</span></label>
+            <input type="text" id="new-int-title" class="form-input" placeholder="e.g. Principal Cloud Engineer" required>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="new-int-pass">Initial Temporary Password <span class="required">*</span></label>
+            <input type="password" id="new-int-pass" class="form-input" value="Password@123" required>
+            <span class="form-helper">Staff member must update password on first authenticated session.</span>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" id="cancel-add-btn">Cancel</button>
+          <button type="submit" class="btn btn-primary">Provision Account</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Firebase App & Services SDKs (v10 Compat) -->
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
+
+  <script src="../firebase/config.js"></script>
+  <script src="../services/interview-service.js"></script>
+  <script src="../services/auth-service.js"></script>
+  <script src="../services/notification-service.js"></script>
+  <script src="../assets/js/app.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      // Guard: Admin role only
+      const user = window.authService.requireAuth('admin');
+      if (!user) return;
+
+      const tbody = document.getElementById('interviewers-tbody');
+      const addModal = document.getElementById('add-interviewer-modal');
+      const addForm = document.getElementById('add-interviewer-form');
+
+      function renderInterviewers() {
+        const users = window.authService.getUsers();
+        const interviews = window.interviewService.getInterviews();
+
+        tbody.innerHTML = users.map(u => {
+          const assignedCount = interviews.filter(i => 
+            i.interviewerId === 'both' ||
+            i.interviewerId === u.uid || 
+            (i.interviewerEmail && i.interviewerEmail.toLowerCase().includes(u.email.toLowerCase()))
+          ).length;
+
+          return `
+            <tr>
+              <td>
+                <div style="font-weight: 600; color: var(--text-main);">${u.name}</div>
+                <div class="text-muted" style="font-size: 0.78rem;">${u.email}</div>
+              </td>
+              <td>
+                <span class="badge ${u.role === 'admin' ? 'badge-in-progress' : 'badge-scheduled'}">
+                  ${u.role === 'admin' ? 'System Administrator' : 'Interviewer'}
+                </span>
+              </td>
+              <td>
+                <div style="font-size: 0.88rem;">${u.position || 'Evaluator'}</div>
+                <div class="text-muted" style="font-size: 0.75rem;">${u.department || 'Engineering'}</div>
+              </td>
+              <td>
+                <span class="badge" style="background: rgba(255,255,255,0.04); font-size: 0.8rem;">
+                  ${assignedCount} Sessions
+                </span>
+              </td>
+              <td>
+                <span class="badge ${u.isActive ? 'badge-in-progress' : 'badge-cancelled'}">
+                  ${u.isActive ? 'Active' : 'Deactivated'}
+                </span>
+              </td>
+              <td style="text-align: right;">
+                <div style="display: inline-flex; gap: 8px;">
+                  <button class="btn btn-sm btn-outline toggle-status-btn" data-uid="${u.uid}">
+                    ${u.isActive ? 'Deactivate' : 'Activate'}
+                  </button>
+                  <button class="btn btn-sm btn-secondary reset-pwd-btn" data-uid="${u.uid}" data-email="${u.email}">
+                    Reset Pass
+                  </button>
+                </div>
+              </td>
+            </tr>
+          `;
+        }).join('');
+
+        if (window.lucide) window.lucide.createIcons({ root: tbody });
+
+        // Bind toggle buttons
+        document.querySelectorAll('.toggle-status-btn').forEach(btn => {
+          btn.addEventListener('click', () => {
+            const uid = btn.getAttribute('data-uid');
+            if (uid === user.uid) {
+              alert('You cannot deactivate your own administrative account.');
+              return;
+            }
+            const allUsers = window.authService.getUsers();
+            const target = allUsers.find(u => u.uid === uid);
+            if (target) {
+              target.isActive = !target.isActive;
+              window.authService.saveUsers(allUsers);
+              window.notificationService.showToast('Account Updated', `${target.name} is now ${target.isActive ? 'active' : 'deactivated'}.`, 'info');
+              renderInterviewers();
+            }
+          });
+        });
+
+        // Reset password
+        document.querySelectorAll('.reset-pwd-btn').forEach(btn => {
+          btn.addEventListener('click', () => {
+            const uid = btn.getAttribute('data-uid');
+            const email = btn.getAttribute('data-email');
+            const allUsers = window.authService.getUsers();
+            const target = allUsers.find(u => u.uid === uid || u.email.toLowerCase() === email.toLowerCase());
+            if (target) {
+              target.password = 'Password@123';
+              target.updatedAt = new Date().toISOString();
+              window.authService.saveUsers(allUsers);
+              alert(`Temporary password for ${email} has been reset to: Password@123`);
+              window.notificationService.showToast('Password Reset', `Updated password for ${email} to Password@123`, 'success');
+            }
+          });
+        });
+      }
+
+      // Add modal handlers
+      document.getElementById('open-add-interviewer-btn').addEventListener('click', () => {
+        addModal.classList.add('active');
+        if (window.lucide) window.lucide.createIcons();
+      });
+
+      document.getElementById('close-add-modal').addEventListener('click', () => addModal.classList.remove('active'));
+      document.getElementById('cancel-add-btn').addEventListener('click', () => addModal.classList.remove('active'));
+
+      addForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const allUsers = window.authService.getUsers();
+        const email = document.getElementById('new-int-email').value.trim().toLowerCase();
+
+        if (allUsers.some(u => u.email.toLowerCase() === email)) {
+          alert('An account with this email address already exists.');
+          return;
+        }
+
+        const newUser = {
+          uid: 'usr_' + Date.now().toString(36),
+          name: document.getElementById('new-int-name').value.trim(),
+          email,
+          password: document.getElementById('new-int-pass').value,
+          role: document.getElementById('new-int-role').value,
+          department: document.getElementById('new-int-dept').value,
+          position: document.getElementById('new-int-title').value.trim(),
+          isActive: true,
+          createdAt: new Date().toISOString()
+        };
+
+        allUsers.push(newUser);
+        window.authService.saveUsers(allUsers);
+        addModal.classList.remove('active');
+        addForm.reset();
+        window.notificationService.showToast('Account Created', `Provisioned account for ${newUser.name}`, 'success');
+        renderInterviewers();
+      });
+
+      window.interviewService.onSync(renderInterviewers);
+      renderInterviewers();
+    });
+  </script>
+</body>
+</html>
+

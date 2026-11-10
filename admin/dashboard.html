@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Overview Dashboard – Devs Interview - By Vyronix Labs</title>
+  <link rel="stylesheet" href="../assets/css/global.css">
+  <link rel="stylesheet" href="../assets/css/dashboard.css">
+  <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body>
+  <div class="app-layout">
+    <!-- Sidebar Navigation -->
+    <aside class="sidebar" id="sidebar"></aside>
+
+    <!-- Main Content Wrapper -->
+    <div class="main-wrapper">
+      <!-- Topbar Header -->
+      <header class="topbar">
+        <div class="topbar-left">
+          <button class="mobile-menu-btn" id="mobile-menu-btn" title="Toggle Menu">
+            <i data-lucide="menu"></i>
+          </button>
+          <h2 class="page-title">
+            <i data-lucide="layout-dashboard" style="color: var(--primary);"></i>
+            Operations Overview
+          </h2>
+          <div class="live-indicator-pill">
+            <span class="pulse-circle"></span>
+            Proctoring Engine Online
+          </div>
+        </div>
+
+        <div class="topbar-right">
+          <div style="position: relative;">
+            <button class="topbar-action-btn" id="notif-bell-btn" title="Activity Notifications">
+              <i data-lucide="bell"></i>
+              <span class="notification-count" id="notif-badge-count" style="display: none;">0</span>
+            </button>
+            <div class="notification-dropdown" id="notification-dropdown">
+              <div class="notification-header">
+                <span style="font-weight: 700; font-size: 0.9rem;">Audit & Proctoring Alerts</span>
+                <button class="btn btn-sm btn-outline" id="mark-all-read-btn" style="padding: 2px 8px; font-size: 0.75rem;">Clear All</button>
+              </div>
+              <ul class="notification-list" id="notification-list"></ul>
+            </div>
+          </div>
+
+          <a href="schedule.html" class="btn btn-primary btn-sm" id="topbar-schedule-btn">
+            <i data-lucide="plus"></i>
+            Schedule Interview
+          </a>
+        </div>
+      </header>
+
+      <!-- Main Body -->
+      <main class="content-body">
+        <!-- Role greeting banner -->
+        <div class="card" style="margin-bottom: 24px; background: linear-gradient(135deg, rgba(99,102,241,0.08) 0%, rgba(21,30,48,0.9) 100%); border-color: rgba(99,102,241,0.25);">
+          <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px;">
+            <div>
+              <h3 style="font-size: 1.35rem; margin-bottom: 4px;">Welcome back, <span id="user-display-name">User</span></h3>
+              <p style="font-size: 0.88rem; color: var(--text-muted);" id="user-role-scope-msg">Viewing organization-wide recruitment intelligence and live telemetry.</p>
+            </div>
+            <div style="display: flex; gap: 10px;">
+              <a href="monitoring.html" class="btn btn-success btn-sm">
+                <i data-lucide="video"></i>
+                Active Sessions (<span id="active-count-badge">0</span>)
+              </a>
+            </div>
+          </div>
+        </div>
+
+        <!-- 8 Stat Metrics Grid -->
+        <div class="grid-stats">
+          <div class="metric-card">
+            <div class="metric-icon-wrap" style="background-color: rgba(56, 189, 248, 0.12); color: var(--secondary);">
+              <i data-lucide="users"></i>
+            </div>
+            <div class="metric-info">
+              <span class="metric-value" id="stat-total-candidates">0</span>
+              <span class="metric-label">Total Candidates</span>
+            </div>
+          </div>
+
+          <div class="metric-card">
+            <div class="metric-icon-wrap" style="background-color: rgba(99, 102, 241, 0.12); color: var(--primary);">
+              <i data-lucide="calendar"></i>
+            </div>
+            <div class="metric-info">
+              <span class="metric-value" id="stat-total-interviews">0</span>
+              <span class="metric-label">Total Interviews</span>
+            </div>
+          </div>
+
+          <div class="metric-card">
+            <div class="metric-icon-wrap" style="background-color: rgba(16, 185, 129, 0.12); color: var(--success);">
+              <i data-lucide="clock"></i>
+            </div>
+            <div class="metric-info">
+              <span class="metric-value" id="stat-today-interviews">0</span>
+              <span class="metric-label">Scheduled Today</span>
+            </div>
+          </div>
+
+          <div class="metric-card">
+            <div class="metric-icon-wrap" style="background-color: rgba(245, 158, 11, 0.12); color: var(--warning);">
+              <i data-lucide="hourglass"></i>
+            </div>
+            <div class="metric-info">
+              <span class="metric-value" id="stat-upcoming-interviews">0</span>
+              <span class="metric-label">Upcoming</span>
+            </div>
+          </div>
+
+          <div class="metric-card">
+            <div class="metric-icon-wrap" style="background-color: rgba(16, 185, 129, 0.15); color: var(--success);">
+              <i data-lucide="activity"></i>
+            </div>
+            <div class="metric-info">
+              <span class="metric-value" id="stat-in-progress">0</span>
+              <span class="metric-label">In Progress</span>
+            </div>
+          </div>
+
+          <div class="metric-card">
+            <div class="metric-icon-wrap" style="background-color: rgba(129, 140, 248, 0.12); color: #818CF8;">
+              <i data-lucide="check-circle-2"></i>
+            </div>
+            <div class="metric-info">
+              <span class="metric-value" id="stat-completed">0</span>
+              <span class="metric-label">Completed</span>
+            </div>
+          </div>
+
+          <div class="metric-card">
+            <div class="metric-icon-wrap" style="background-color: rgba(239, 68, 68, 0.12); color: var(--danger);">
+              <i data-lucide="x-circle"></i>
+            </div>
+            <div class="metric-info">
+              <span class="metric-value" id="stat-cancelled">0</span>
+              <span class="metric-label">Cancelled</span>
+            </div>
+          </div>
+
+          <div class="metric-card">
+            <div class="metric-icon-wrap" style="background-color: rgba(148, 163, 184, 0.12); color: var(--text-muted);">
+              <i data-lucide="user-x"></i>
+            </div>
+            <div class="metric-info">
+              <span class="metric-value" id="stat-no-show">0</span>
+              <span class="metric-label">No-Show</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 2 Column Section: Active & Upcoming Interviews + Recent Activity Timeline -->
+        <div class="grid-2-1">
+          <!-- Active Sessions & Upcoming Schedule Table -->
+          <div class="card">
+            <div class="card-header">
+              <div>
+                <h3 class="card-title">
+                  <i data-lucide="radio" style="color: var(--secondary);"></i>
+                  Active & Upcoming Interview Pipeline
+                </h3>
+                <p class="card-subtitle">Real-time candidate statuses and instant proctoring join shortcuts</p>
+              </div>
+              <a href="interviews.html" class="btn btn-outline btn-sm">View All</a>
+            </div>
+
+            <div class="table-container">
+              <table class="table">
+                <thead>
+                  <tr>
+                    <th>Candidate</th>
+                    <th>Position</th>
+                    <th>Schedule</th>
+                    <th>Interviewer</th>
+                    <th>Status</th>
+                    <th style="text-align: right;">Action</th>
+                  </tr>
+                </thead>
+                <tbody id="dashboard-interviews-tbody"></tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Recent Audit & Proctoring Stream -->
+          <div class="card">
+            <div class="card-header">
+              <div>
+                <h3 class="card-title">
+                  <i data-lucide="shield-alert" style="color: var(--warning);"></i>
+                  Recent Telemetry
+                </h3>
+                <p class="card-subtitle">Live proctoring violations & system audit events</p>
+              </div>
+            </div>
+
+            <div class="activity-timeline" id="dashboard-activity-timeline" style="max-height: 480px;"></div>
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <!-- Firebase App & Services SDKs (v10 Compat) -->
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
+
+  <script src="../firebase/config.js"></script>
+  <script src="../services/interview-service.js"></script>
+  <script src="../services/auth-service.js"></script>
+  <script src="../services/notification-service.js"></script>
+  <script src="../assets/js/app.js"></script>
+  <script src="../assets/js/dashboard.js"></script>
+</body>
+</html>
+

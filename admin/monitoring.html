@@ -1,0 +1,641 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Live Interview Monitoring – Devs Interview - By Vyronix Labs</title>
+  <link rel="stylesheet" href="../assets/css/global.css">
+  <link rel="stylesheet" href="../assets/css/dashboard.css">
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <style>
+    .status-pill-small {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 0.72rem;
+      font-weight: 600;
+      padding: 3px 8px;
+      border-radius: var(--radius-full);
+      background-color: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--border);
+    }
+    .status-pill-active {
+      background-color: var(--success-light);
+      color: var(--success);
+      border-color: rgba(16, 185, 129, 0.3);
+    }
+    .status-pill-inactive {
+      background-color: var(--danger-light);
+      color: var(--danger);
+      border-color: rgba(239, 68, 68, 0.3);
+    }
+  </style>
+</head>
+<body>
+  <div class="app-layout">
+    <aside class="sidebar" id="sidebar"></aside>
+
+    <div class="main-wrapper">
+      <header class="topbar">
+        <div class="topbar-left">
+          <button class="mobile-menu-btn" id="mobile-menu-btn" title="Toggle Menu">
+            <i data-lucide="menu"></i>
+          </button>
+          <h2 class="page-title">
+            <i data-lucide="video" style="color: var(--success);"></i>
+            Live Surveillance & Evaluation Console
+          </h2>
+          <!-- Session Selector -->
+          <select id="active-session-selector" class="form-select" style="max-width: 280px; padding: 6px 12px; font-size: 0.85rem;"></select>
+        </div>
+
+        <div class="topbar-right">
+          <div id="session-timer-badge" class="badge" style="background-color: rgba(255,255,255,0.05); font-family: monospace; font-size: 0.95rem; padding: 6px 12px;">
+            <i data-lucide="clock" style="width: 14px; height: 14px;"></i>
+            <span id="monitoring-timer">00:00:00</span>
+          </div>
+
+          <div style="position: relative;">
+            <button class="topbar-action-btn" id="notif-bell-btn">
+              <i data-lucide="bell"></i>
+              <span class="notification-count" id="notif-badge-count" style="display: none;">0</span>
+            </button>
+            <div class="notification-dropdown" id="notification-dropdown">
+              <div class="notification-header">
+                <span style="font-weight: 700; font-size: 0.9rem;">Audit Alerts</span>
+                <button class="btn btn-sm btn-outline" id="mark-all-read-btn">Clear All</button>
+              </div>
+              <ul class="notification-list" id="notification-list"></ul>
+            </div>
+          </div>
+
+          <a href="#" id="view-eval-report-btn" class="btn btn-primary btn-sm">
+            <i data-lucide="file-check"></i> Evaluate & Report
+          </a>
+        </div>
+      </header>
+
+      <main class="content-body" style="padding-bottom: 16px;">
+        <!-- Candidate Telemetry Bar -->
+        <div class="card" style="padding: 12px 20px; margin-bottom: 16px; background-color: var(--bg-card);">
+          <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 14px;">
+            <div style="display: flex; align-items: center; gap: 16px;">
+              <div>
+                <span style="font-size: 1.1rem; font-weight: 700; color: var(--text-main);" id="mon-candidate-name">No Session Selected</span>
+                <span style="font-size: 0.85rem; color: var(--text-muted); margin-left: 8px;" id="mon-candidate-role">Awaiting session connection</span>
+              </div>
+              <span class="badge" id="mon-session-status"><span class="badge-dot"></span>Idle</span>
+            </div>
+
+            <!-- Health Status Indicators -->
+            <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+              <span class="status-pill-small status-pill-active" id="pill-webcam">
+                <i data-lucide="camera" style="width: 12px; height: 12px;"></i> Webcam Active
+              </span>
+              <span class="status-pill-small status-pill-active" id="pill-screen">
+                <i data-lucide="monitor" style="width: 12px; height: 12px;"></i> Screen Broadcast
+              </span>
+              <span class="status-pill-small status-pill-active" id="pill-fullscreen">
+                <i data-lucide="maximize" style="width: 12px; height: 12px;"></i> Fullscreen
+              </span>
+              <span class="status-pill-small" id="pill-warnings" style="background-color: rgba(245, 158, 11, 0.15); color: var(--warning); border-color: rgba(245, 158, 11, 0.3);">
+                <i data-lucide="alert-triangle" style="width: 12px; height: 12px;"></i> Warnings: <span id="mon-warning-count">0</span> / <span id="mon-max-warnings">3</span>
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Monitoring Main Layout: Video Stage + Telemetry/Questions Sidebar -->
+        <div class="monitoring-layout">
+          <!-- Video Feeds Section -->
+          <div class="monitoring-main">
+            <!-- Screen Sharing Video Canvas with PIP Webcam -->
+            <div class="video-stage-container" id="video-stage">
+              <div class="stream-overlay-badge">
+                <i data-lucide="monitor" style="width: 14px; height: 14px; color: var(--secondary);"></i>
+                <span>Candidate Shared Desktop Feed</span>
+                <span id="screen-stream-status" class="badge badge-in-progress" style="font-size: 0.65rem; padding: 2px 6px;">Live WebRTC</span>
+              </div>
+
+              <!-- Shared Screen Video -->
+              <video id="remote-screen-video" class="screen-stream-video" autoplay playsinline muted></video>
+
+              <!-- Picture-in-picture Candidate Webcam Video -->
+              <div class="webcam-pip-container" id="webcam-pip">
+                <div style="position: absolute; top: 6px; left: 8px; font-size: 0.68rem; color: #FFF; background: rgba(0,0,0,0.6); padding: 2px 6px; border-radius: 4px; z-index: 2;">
+                  Candidate Webcam
+                </div>
+                <video id="remote-webcam-video" class="webcam-pip-video" autoplay playsinline></video>
+              </div>
+
+              <!-- Placeholder when no peer stream is active yet -->
+              <div id="no-stream-placeholder" style="position: absolute; inset: 0; display: none; flex-direction: column; align-items: center; justify-content: center; background: rgba(11, 16, 32, 0.95); z-index: 1;">
+                <div class="empty-state">
+                  <div class="empty-state-icon" style="width: 56px; height: 56px;"><i data-lucide="video-off"></i></div>
+                  <div class="empty-state-title" style="font-size: 1.1rem;">Awaiting Candidate WebRTC Media</div>
+                  <p class="empty-state-desc" style="font-size: 0.85rem; max-width: 360px;">
+                    When candidate completes the pre-check and enters the proctored interview room, live webcam and desktop screen will stream here.
+                  </p>
+                  <a href="#" id="open-candidate-tab-shortcut" class="btn btn-outline btn-sm" target="_blank">
+                    <i data-lucide="external-link"></i> Open Candidate Room Tab
+                  </a>
+                </div>
+              </div>
+            </div>
+
+            <!-- Real-time Question Broadcaster Dock -->
+            <div class="question-dock">
+              <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
+                <div style="font-weight: 700; font-size: 0.95rem; display: flex; align-items: center; gap: 8px;">
+                  <i data-lucide="zap" style="color: var(--secondary);"></i>
+                  Real-Time Question Broadcaster
+                </div>
+                <span class="text-muted" style="font-size: 0.78rem;">Flashes instantly onto candidate screen without page refresh</span>
+              </div>
+
+              <div style="display: flex; gap: 10px;">
+                <div class="input-with-icon" style="flex: 1;">
+                  <i data-lucide="help-circle" class="input-icon"></i>
+                  <input type="text" id="question-input" class="form-input" placeholder="Type technical challenge, system design prompt, or coding question...">
+                </div>
+
+                <select id="question-timer-select" class="form-select" style="width: 130px;">
+                  <option value="3">3 Minutes</option>
+                  <option value="5" selected>5 Minutes</option>
+                  <option value="10">10 Minutes</option>
+                  <option value="15">15 Minutes</option>
+                </select>
+
+                <button class="btn btn-primary" id="flash-question-btn">
+                  <i data-lucide="send"></i> Flash Question
+                </button>
+              </div>
+
+              <!-- Active Broadcasted Question Card -->
+              <div id="active-question-display" style="display: none;" class="question-status-active">
+                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px;">
+                  <div style="display: flex; align-items: center; gap: 8px;">
+                    <span class="badge badge-in-progress" style="font-size: 0.7rem;">Currently Active on Candidate Screen</span>
+                    <span id="active-q-sender" class="text-muted" style="font-size: 0.75rem;"></span>
+                  </div>
+                  <button class="btn btn-danger-outline btn-sm" id="clear-question-btn" style="padding: 2px 8px; font-size: 0.75rem;">
+                    Remove Question
+                  </button>
+                </div>
+                <div id="active-q-text" style="font-weight: 600; font-size: 0.95rem; color: var(--text-main);"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Monitoring Right Sidebar (Timeline & Technical Diagnostics) -->
+          <div class="monitoring-sidebar">
+            <!-- Tabs: Proctoring Timeline & Candidate Tech Diagnostics -->
+            <div class="card" style="padding: 0; overflow: hidden; display: flex; flex-direction: column; flex: 1;">
+              <div style="display: flex; border-bottom: 1px solid var(--border); background-color: rgba(255,255,255,0.02);">
+                <button class="btn btn-outline" id="tab-timeline-btn" style="flex: 1; border: none; border-radius: 0; border-bottom: 2px solid var(--primary); font-size: 0.85rem;">
+                  <i data-lucide="shield-alert"></i> Activity Stream
+                </button>
+                <button class="btn btn-outline" id="tab-techinfo-btn" style="flex: 1; border: none; border-radius: 0; color: var(--text-muted); font-size: 0.85rem;">
+                  <i data-lucide="cpu"></i> Technical Info
+                </button>
+              </div>
+
+              <!-- Activity Timeline View -->
+              <div id="view-timeline" style="padding: 16px; flex: 1; overflow-y: auto;">
+                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
+                  <span style="font-size: 0.8rem; font-weight: 700; text-transform: uppercase; color: var(--text-muted);">Proctoring Audit Events</span>
+                  <span class="status-pill-small" style="font-size: 0.7rem;"><i data-lucide="activity" style="width: 10px; height: 10px;"></i> Real-Time</span>
+                </div>
+                <div class="activity-timeline" id="monitoring-timeline-list"></div>
+              </div>
+
+              <!-- Technical Information View -->
+              <div id="view-techinfo" style="display: none; padding: 16px; flex: 1; overflow-y: auto;">
+                <div style="font-size: 0.8rem; font-weight: 700; text-transform: uppercase; color: var(--text-muted); margin-bottom: 12px;">
+                  Candidate Network & Device Fingerprint
+                </div>
+                <div id="tech-details-container" style="display: flex; flex-direction: column; gap: 12px; font-size: 0.82rem;"></div>
+              </div>
+            </div>
+
+            <!-- Fast Action Controls -->
+            <div class="card" style="padding: 16px;">
+              <div style="font-size: 0.8rem; font-weight: 700; text-transform: uppercase; color: var(--text-muted); margin-bottom: 10px;">
+                Session Controls
+              </div>
+              <div style="display: flex; flex-direction: column; gap: 8px;">
+                <button class="btn btn-secondary btn-sm w-full" id="trigger-warning-btn">
+                  <i data-lucide="alert-triangle"></i> Issue Manual Proctoring Warning
+                </button>
+                <button class="btn btn-danger-outline btn-sm w-full" id="terminate-session-btn">
+                  <i data-lucide="stop-circle"></i> Conclude & Finalize Interview
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <!-- Firebase App & Services SDKs (v10 Compat) -->
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
+
+  <script src="../firebase/config.js"></script>
+  <script src="../services/interview-service.js"></script>
+  <script src="../services/auth-service.js"></script>
+  <script src="../services/webrtc-service.js"></script>
+  <script src="../services/network-service.js"></script>
+  <script src="../services/notification-service.js"></script>
+  <script src="../assets/js/app.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const user = window.authService.requireAuth();
+      if (!user) return;
+
+      const isAdmin = user.role === 'admin';
+      const sessionSelector = document.getElementById('active-session-selector');
+      const candidateNameElem = document.getElementById('mon-candidate-name');
+      const candidateRoleElem = document.getElementById('mon-candidate-role');
+      const warningCountElem = document.getElementById('mon-warning-count');
+      const maxWarningsElem = document.getElementById('mon-max-warnings');
+      const timelineList = document.getElementById('monitoring-timeline-list');
+      const techContainer = document.getElementById('tech-details-container');
+      const noStreamPlaceholder = document.getElementById('no-stream-placeholder');
+      const openCandidateTabShortcut = document.getElementById('open-candidate-tab-shortcut');
+      const evalReportBtn = document.getElementById('view-eval-report-btn');
+
+      // Question broadcaster elements
+      const questionInput = document.getElementById('question-input');
+      const questionTimerSelect = document.getElementById('question-timer-select');
+      const flashQuestionBtn = document.getElementById('flash-question-btn');
+      const activeQDisplay = document.getElementById('active-question-display');
+      const activeQText = document.getElementById('active-q-text');
+      const activeQSender = document.getElementById('active-q-sender');
+      const clearQBtn = document.getElementById('clear-question-btn');
+
+      let currentInterview = null;
+      let timerInterval = null;
+      let sessionStartTime = Date.now();
+
+      // Get permitted interviews
+      let interviews = window.interviewService.getInterviews();
+      if (!isAdmin) {
+        interviews = interviews.filter(i =>
+          i.interviewerId === user.uid ||
+          (i.interviewerEmail && i.interviewerEmail.toLowerCase() === user.email.toLowerCase())
+        );
+      }
+
+      // Read requested ID from URL or pick first active / first available
+      const urlParams = new URLSearchParams(window.location.search);
+      const requestedId = urlParams.get('id');
+
+      if (interviews.length === 0) {
+        sessionSelector.innerHTML = '<option value="">No Active Interviews</option>';
+        candidateNameElem.textContent = 'No Interviews Available';
+        candidateRoleElem.textContent = 'Schedule an interview first to monitor live.';
+        document.getElementById('video-stage').innerHTML = `
+          <div class="empty-state" style="padding: 48px 24px;">
+            <div class="empty-state-icon" style="width: 56px; height: 56px;"><i data-lucide="video-off"></i></div>
+            <div class="empty-state-title">No Live Sessions in Progress</div>
+            <p class="empty-state-desc">There are currently no scheduled or active candidate interviews to monitor.</p>
+            ${isAdmin ? `<a href="schedule.html" class="btn btn-primary btn-sm"><i data-lucide="plus"></i> Schedule New Interview</a>` : ''}
+          </div>
+        `;
+        if (window.lucide) window.lucide.createIcons();
+        return;
+      }
+
+      sessionSelector.innerHTML = interviews.map(i => `
+        <option value="${i.interviewId}" ${i.interviewId === requestedId ? 'selected' : ''}>
+          ${i.candidateName} (${i.status})
+        </option>
+      `).join('');
+
+      let selectedId = sessionSelector.value || interviews[0].interviewId;
+      loadSession(selectedId);
+
+      sessionSelector.addEventListener('change', () => {
+        loadSession(sessionSelector.value);
+      });
+
+      function loadSession(interviewId) {
+        currentInterview = window.interviewService.getInterviewById(interviewId);
+        if (!currentInterview) return;
+
+        candidateNameElem.textContent = currentInterview.candidateName;
+        candidateRoleElem.textContent = `${currentInterview.position} · ${currentInterview.department}`;
+        document.getElementById('mon-session-status').innerHTML = `<span class="badge-dot"></span>${currentInterview.status}`;
+        maxWarningsElem.textContent = currentInterview.settings.maxWarnings || 3;
+        evalReportBtn.href = `reports.html?id=${currentInterview.interviewId}`;
+
+        const origin = window.location.origin + window.location.pathname.replace('/admin/monitoring.html', '');
+        openCandidateTabShortcut.href = `${origin}/candidate/pre-check.html?token=${currentInterview.token}`;
+
+        // Update elapsed timer
+        clearInterval(timerInterval);
+        sessionStartTime = Date.now();
+        timerInterval = setInterval(() => {
+          const diff = Math.floor((Date.now() - sessionStartTime) / 1000);
+          const hrs = String(Math.floor(diff / 3600)).padStart(2, '0');
+          const mins = String(Math.floor((diff % 3600) / 60)).padStart(2, '0');
+          const secs = String(diff % 60).padStart(2, '0');
+          document.getElementById('monitoring-timer').textContent = `${hrs}:${mins}:${secs}`;
+        }, 1000);
+
+        // WebRTC Signaling
+        connectWebRTC(currentInterview);
+
+        // Load timeline & tech info
+        renderTimeline(currentInterview.interviewId);
+        renderTechInfo(currentInterview.interviewId);
+        renderActiveQuestion(currentInterview.interviewId);
+      }
+
+      function connectWebRTC(interview) {
+        const remoteWebcamVideo = document.getElementById('remote-webcam-video');
+        const remoteScreenVideo = document.getElementById('remote-screen-video');
+        const pillCam = document.getElementById('pill-webcam');
+        const pillMic = document.getElementById('pill-mic');
+        const pillScreen = document.getElementById('pill-screen');
+
+        if (remoteWebcamVideo) remoteWebcamVideo.srcObject = null;
+        if (remoteScreenVideo) remoteScreenVideo.srcObject = null;
+        noStreamPlaceholder.style.display = 'flex';
+
+        // Check if candidate is connected or has active streams
+        window.webRTCService.onRemoteStreamsReady = ({ webcamStream, screenStream }) => {
+          console.log('[Monitoring] Remote media received');
+          const hasCam = webcamStream && webcamStream.getVideoTracks().length > 0;
+          const hasMic = webcamStream && webcamStream.getAudioTracks().length > 0;
+          const hasScreen = screenStream && screenStream.getVideoTracks().length > 0;
+
+          if (hasCam || hasScreen) {
+            noStreamPlaceholder.style.display = 'none';
+          }
+
+          if (webcamStream && remoteWebcamVideo && hasCam) {
+            remoteWebcamVideo.srcObject = webcamStream;
+            remoteWebcamVideo.play().catch(() => {});
+          }
+          if (screenStream && remoteScreenVideo && hasScreen) {
+            remoteScreenVideo.srcObject = screenStream;
+            remoteScreenVideo.play().catch(() => {});
+          } else if (webcamStream && remoteScreenVideo && hasCam && !hasScreen) {
+            // Mobile / webcam-only fallback into main stage
+            remoteScreenVideo.srcObject = webcamStream;
+            remoteScreenVideo.play().catch(() => {});
+          }
+
+          if (pillCam) pillCam.className = `health-pill ${hasCam ? 'health-ok' : ''}`;
+          if (pillMic) pillMic.className = `health-pill ${hasMic ? 'health-ok' : ''}`;
+          if (pillScreen) pillScreen.className = `health-pill ${hasScreen ? 'health-ok' : ''}`;
+        };
+
+        window.webRTCService.onTrackEnded = (kind) => {
+          window.notificationService.showToast('Candidate Feed Interrupted', `Candidate ${kind} broadcast was stopped.`, 'danger');
+          window.interviewService.recordEvent(interview.interviewId, `${kind.toUpperCase()} Stopped`, `Candidate stopped ${kind} broadcast`, 'danger');
+        };
+
+        // Start listening on this interview room
+        window.webRTCService.startMonitoringListener(interview.token);
+      }
+
+      function renderTimeline(interviewId) {
+        const events = window.interviewService.getEvents(interviewId).reverse();
+        
+        // Count warnings
+        const warnings = events.filter(e => e.severity === 'warning' || e.severity === 'danger').length;
+        warningCountElem.textContent = warnings;
+
+        const max = parseInt(currentInterview.settings.maxWarnings || 3, 10);
+        const pillWarn = document.getElementById('pill-warnings');
+        if (warnings >= max) {
+          pillWarn.style.backgroundColor = 'var(--danger-light)';
+          pillWarn.style.color = 'var(--danger)';
+          pillWarn.style.borderColor = 'rgba(239,68,68,0.4)';
+        }
+
+        if (events.length === 0) {
+          timelineList.innerHTML = `
+            <div class="empty-state" style="padding: 24px 12px;">
+              <i data-lucide="shield-check" style="width: 28px; height: 28px; color: var(--success); margin: 0 auto 6px; display: block;"></i>
+              <div style="font-size: 0.85rem; font-weight: 600;">No Proctoring Violations</div>
+              <p class="text-muted" style="font-size: 0.75rem;">Candidate is complying with proctoring parameters.</p>
+            </div>
+          `;
+          if (window.lucide) window.lucide.createIcons({ root: timelineList });
+          return;
+        }
+
+        timelineList.innerHTML = events.map(evt => {
+          let icon = 'shield-alert';
+          let color = 'var(--warning)';
+          if (evt.severity === 'danger') { icon = 'alert-octagon'; color = 'var(--danger)'; }
+          if (evt.severity === 'info') { icon = 'info'; color = 'var(--secondary)'; }
+
+          return `
+            <div class="timeline-item">
+              <div class="timeline-dot" style="color: ${color};">
+                <i data-lucide="${icon}" style="width: 13px; height: 13px;"></i>
+              </div>
+              <div class="timeline-content">
+                <div style="font-weight: 600; font-size: 0.82rem; color: var(--text-main);">${evt.eventType}</div>
+                <div style="font-size: 0.75rem; color: var(--text-muted);">${evt.description}</div>
+                <div class="timeline-time">${new Date(evt.timestamp).toLocaleTimeString()}</div>
+              </div>
+            </div>
+          `;
+        }).join('');
+
+        if (window.lucide) window.lucide.createIcons({ root: timelineList });
+      }
+
+      async function renderTechInfo(interviewId) {
+        const info = await window.networkService.getTechnicalSnapshotAsync(interviewId);
+        if (!info) {
+          techContainer.innerHTML = `
+            <div class="empty-state" style="padding: 24px 12px;">
+              <i data-lucide="cpu" style="width: 28px; height: 28px; color: var(--text-subtle); margin: 0 auto 6px; display: block;"></i>
+              <div style="font-size: 0.85rem; font-weight: 600;">Awaiting Candidate Telemetry</div>
+              <p class="text-muted" style="font-size: 0.75rem;">Technical metadata will populate when candidate establishes connection.</p>
+            </div>
+          `;
+          if (window.lucide) window.lucide.createIcons({ root: techContainer });
+          return;
+        }
+
+        techContainer.innerHTML = `
+          <div style="padding: 10px; background: rgba(255,255,255,0.02); border-radius: var(--radius-sm); border: 1px solid var(--border);">
+            <div class="text-muted" style="font-size: 0.72rem; text-transform: uppercase;">Public IP & ASN</div>
+            <div style="font-weight: 600; font-family: monospace; color: var(--secondary);">${info.publicIP} (${info.asn})</div>
+            <div style="font-size: 0.75rem; color: var(--text-muted);">${info.isp}</div>
+            <div style="font-size: 0.75rem; color: var(--text-subtle);">${info.location}</div>
+          </div>
+
+          <div style="padding: 10px; background: rgba(255,255,255,0.02); border-radius: var(--radius-sm); border: 1px solid var(--border);">
+            <div class="text-muted" style="font-size: 0.72rem; text-transform: uppercase;">Device & Operating System</div>
+            <div style="font-weight: 600; color: var(--text-main);">${info.operatingSystem}</div>
+            <div style="font-size: 0.75rem; color: var(--text-muted);">${info.browser}</div>
+            <div style="font-size: 0.75rem; color: var(--text-muted);">Display: ${info.screenResolution} (${info.pixelRatio})</div>
+          </div>
+
+          <div style="padding: 10px; background: rgba(255,255,255,0.02); border-radius: var(--radius-sm); border: 1px solid var(--border);">
+            <div class="text-muted" style="font-size: 0.72rem; text-transform: uppercase;">Network Diagnostics</div>
+            <div style="display: flex; justify-content: space-between; margin-top: 4px;">
+              <span>Latency: <strong style="color: var(--success);">${info.measuredLatency}</strong></span>
+              <span>Speed: <strong>${info.estimatedSpeed}</strong></span>
+            </div>
+          </div>
+        `;
+
+        if (window.lucide) window.lucide.createIcons({ root: techContainer });
+      }
+
+      function renderActiveQuestion(interviewId) {
+        const q = window.interviewService.getActiveQuestion(interviewId);
+        if (q) {
+          activeQDisplay.style.display = 'block';
+          activeQText.textContent = q.questionText;
+          activeQSender.textContent = `Sent by ${q.senderName} (${Math.round(q.durationSeconds / 60)} min timer)`;
+        } else {
+          activeQDisplay.style.display = 'none';
+        }
+      }
+
+      // Flash question button
+      flashQuestionBtn.addEventListener('click', () => {
+        const txt = questionInput.value.trim();
+        if (!txt) {
+          alert('Please enter a question prompt to flash.');
+          return;
+        }
+
+        const duration = parseInt(questionTimerSelect.value, 10);
+        window.interviewService.flashQuestion(currentInterview.interviewId, txt, user.name, duration);
+        questionInput.value = '';
+        renderActiveQuestion(currentInterview.interviewId);
+        window.notificationService.showToast('Question Broadcasted', 'Flashed directly onto candidate screen.', 'success');
+      });
+
+      // Clear question button
+      clearQBtn.addEventListener('click', () => {
+        window.interviewService.clearActiveQuestion(currentInterview.interviewId);
+        renderActiveQuestion(currentInterview.interviewId);
+        window.notificationService.showToast('Question Cleared', 'Removed question from candidate screen.', 'info');
+      });
+
+      // Manual warning issue
+      document.getElementById('trigger-warning-btn').addEventListener('click', () => {
+        const reason = prompt('Enter violation note for manual warning:', 'Suspicious lateral glance / unauthorized reference material');
+        if (reason) {
+          window.interviewService.recordEvent(currentInterview.interviewId, 'Manual Proctoring Warning', `Issued by ${user.name}: ${reason}`, 'warning');
+          renderTimeline(currentInterview.interviewId);
+        }
+      });
+
+      // Terminate session
+      document.getElementById('terminate-session-btn').addEventListener('click', async () => {
+        if (confirm(`Conclude and finalize interview for ${currentInterview.candidateName}? You will be directed to the Evaluation Report.`)) {
+          await window.interviewService.updateStatus(currentInterview.interviewId, 'Completed');
+          window.location.href = `reports.html?id=${currentInterview.interviewId}`;
+        }
+      });
+
+      // Tabs switcher
+      const tabTimelineBtn = document.getElementById('tab-timeline-btn');
+      const tabTechBtn = document.getElementById('tab-techinfo-btn');
+      const viewTimeline = document.getElementById('view-timeline');
+      const viewTech = document.getElementById('view-techinfo');
+
+      tabTimelineBtn.addEventListener('click', () => {
+        viewTimeline.style.display = 'block';
+        viewTech.style.display = 'none';
+        tabTimelineBtn.style.borderBottom = '2px solid var(--primary)';
+        tabTimelineBtn.style.color = 'var(--text-main)';
+        tabTechBtn.style.borderBottom = 'none';
+        tabTechBtn.style.color = 'var(--text-muted)';
+      });
+
+      tabTechBtn.addEventListener('click', () => {
+        viewTimeline.style.display = 'none';
+        viewTech.style.display = 'block';
+        tabTechBtn.style.borderBottom = '2px solid var(--primary)';
+        tabTechBtn.style.color = 'var(--text-main)';
+        tabTimelineBtn.style.borderBottom = 'none';
+        tabTimelineBtn.style.color = 'var(--text-muted)';
+      });
+
+      // Reactive sync (live additions, updates, and deletions)
+      window.interviewService.onSync(({ action, payload }) => {
+        if (action === 'CLOUD_SYNC') {
+          let updatedList = window.interviewService.getInterviews();
+          if (!isAdmin) {
+            updatedList = updatedList.filter(i =>
+              i.interviewerId === 'both' ||
+              i.interviewerId === user.uid ||
+              (i.interviewerEmail && i.interviewerEmail.toLowerCase().includes(user.email.toLowerCase()))
+            );
+          }
+
+          if (updatedList.length === 0) {
+            currentInterview = null;
+            window.webRTCService.stopMonitoringOnly();
+            sessionSelector.innerHTML = '<option value="">No Active Interviews</option>';
+            candidateNameElem.textContent = 'No Interviews Available';
+            candidateRoleElem.textContent = 'Schedule an interview first to monitor live.';
+            document.getElementById('mon-session-status').innerHTML = `<span class="badge-dot"></span>Idle`;
+            document.getElementById('video-stage').innerHTML = `
+              <div class="empty-state" style="padding: 48px 24px;">
+                <div class="empty-state-icon" style="width: 56px; height: 56px;"><i data-lucide="video-off"></i></div>
+                <div class="empty-state-title">No Live Sessions in Progress</div>
+                <p class="empty-state-desc">There are currently no scheduled or active candidate interviews to monitor.</p>
+                ${isAdmin ? `<a href="schedule.html" class="btn btn-primary btn-sm"><i data-lucide="plus"></i> Schedule New Interview</a>` : ''}
+              </div>
+            `;
+            if (window.lucide) window.lucide.createIcons();
+            return;
+          }
+
+          const currentId = currentInterview ? currentInterview.interviewId : (sessionSelector.value || requestedId);
+          sessionSelector.innerHTML = updatedList.map(i => `
+            <option value="${i.interviewId}" ${i.interviewId === currentId ? 'selected' : ''}>
+              ${i.candidateName} (${i.status})
+            </option>
+          `).join('');
+
+          const stillExists = currentInterview && updatedList.find(i => i.interviewId === currentInterview.interviewId);
+          if (!stillExists) {
+            loadSession(updatedList[0].interviewId);
+          } else {
+            currentInterview = stillExists;
+            document.getElementById('mon-session-status').innerHTML = `<span class="badge-dot"></span>${stillExists.status}`;
+            renderTimeline(currentInterview.interviewId);
+            renderTechInfo(currentInterview.interviewId);
+          }
+          return;
+        }
+
+        if (!currentInterview) return;
+
+        if (action === 'PROCTORING_EVENT' && payload.interviewId === currentInterview.interviewId) {
+          renderTimeline(currentInterview.interviewId);
+        }
+        if (action === 'QUESTION_FLASHED' || action === 'QUESTION_CLEARED') {
+          renderActiveQuestion(currentInterview.interviewId);
+        }
+        if (action === 'STATUS_CHANGED' && payload.interviewId === currentInterview.interviewId) {
+          currentInterview.status = payload.status;
+          document.getElementById('mon-session-status').innerHTML = `<span class="badge-dot"></span>${payload.status}`;
+          renderTechInfo(currentInterview.interviewId);
+        }
+      });
+    });
+  </script>
+</body>
+</html>
+

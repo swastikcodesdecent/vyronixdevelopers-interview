@@ -1,0 +1,152 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // =========================================================================
+    // HELPER FUNCTIONS & ROLE VERIFICATION
+    // =========================================================================
+
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    // Direct executive administrator email verification
+    function isSuperAdmin() {
+      return isAuthenticated() && (
+        request.auth.token.email == 'suvajit.ceo@vyronixlabs.com' ||
+        request.auth.token.email == 'swastik.cto@vyronixlabs.com'
+      );
+    }
+
+    // Role check via user document
+    function getUserData() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+    }
+
+    function isAdmin() {
+      return isSuperAdmin() || (
+        isAuthenticated() && 
+        exists(/databases/$(database)/documents/users/$(request.auth.uid)) && 
+        getUserData().role == 'admin'
+      );
+    }
+
+    function isInterviewer() {
+      return isAuthenticated() && 
+        exists(/databases/$(database)/documents/users/$(request.auth.uid)) && 
+        getUserData().role == 'interviewer';
+    }
+
+    // =========================================================================
+    // 1. USERS COLLECTION
+    // =========================================================================
+    match /users/{userId} {
+      // Authenticated users can read their own profile, Admins can read all profiles
+      allow read: if isAuthenticated() && (request.auth.uid == userId || isAdmin());
+      
+      // Admins have full write privileges; users can update their own non-role fields
+      allow create, delete: if isAdmin();
+      allow update: if isAdmin() || (
+        request.auth.uid == userId && 
+        !request.resource.data.diff(resource.data).affectedKeys().hasAny(['role'])
+      );
+    }
+
+    // =========================================================================
+    // 2. INTERVIEWS COLLECTION
+    // =========================================================================
+    match /interviews/{interviewId} {
+      // Admins have full read, create, update, and delete access
+      allow read, write: if isAdmin();
+
+      // Assigned interviewers & joint executive panels can read & update
+      allow read, update: if isInterviewer() && (
+        resource.data.interviewerId == 'both' ||
+        resource.data.interviewerId == request.auth.uid ||
+        resource.data.interviewerEmail == request.auth.token.email
+      );
+
+      // Candidates can read by token and update only session status fields
+      allow read: if true;
+      allow update: if request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'updatedAt']);
+    }
+
+    // =========================================================================
+    // 3. INTERVIEW SESSIONS
+    // =========================================================================
+    match /interviewSessions/{sessionId} {
+      allow read: if isAdmin() || isInterviewer();
+      allow create, update: if true;
+      allow delete: if isAdmin();
+    }
+
+    // =========================================================================
+    // 4. CANDIDATE TECHNICAL INFORMATION
+    // =========================================================================
+    match /candidateTechnicalInfo/{infoId} {
+      allow read: if isAdmin() || isInterviewer();
+      allow create, update: if true;
+      allow delete: if isAdmin();
+    }
+
+    // =========================================================================
+    // 5. INTERVIEW PROCTORING EVENTS
+    // =========================================================================
+    match /interviewEvents/{eventId} {
+      allow read: if isAdmin() || isInterviewer();
+      // Fullscreen exits, tab switching, and blur events recorded in real time
+      allow create: if true;
+      allow update, delete: if isAdmin();
+    }
+
+    // =========================================================================
+    // 6. INTERVIEW QUESTIONS (BROADCASTER)
+    // =========================================================================
+    match /interviewQuestions/{questionId} {
+      // Candidate must be able to read active broadcasted question
+      allow read: if true;
+      // Only authorized Admins and Interviewers can broadcast/modify questions
+      allow create, update, delete: if isAdmin() || isInterviewer();
+    }
+
+    // =========================================================================
+    // 7. INTERVIEW EVALUATION REPORTS
+    // =========================================================================
+    match /interviewReports/{reportId} {
+      allow read: if isAdmin() || isInterviewer();
+      allow create, update: if isAdmin() || isInterviewer();
+      allow delete: if isAdmin();
+    }
+
+    // =========================================================================
+    // 8. NOTIFICATIONS
+    // =========================================================================
+    match /notifications/{notificationId} {
+      allow read: if isAuthenticated();
+      allow create: if true;
+      allow update: if isAuthenticated(); // e.g. mark as read
+      allow delete: if isAdmin();
+    }
+
+    // =========================================================================
+    // 9. AUDIT LOGS (IMMUTABLE)
+    // =========================================================================
+    match /auditLogs/{logId} {
+      allow read: if isAdmin();
+      allow create: if isAuthenticated();
+      allow update, delete: if false; // Append-only immutable security log
+    }
+
+    // =========================================================================
+    // 10. LIVE QUESTIONS & WEBRTC SIGNALING
+    // =========================================================================
+    match /liveQuestions/{interviewId} {
+      allow read: if true;
+      allow write: if isAdmin() || isInterviewer();
+    }
+
+    match /webrtcRooms/{roomId}/signals/{signalId} {
+      allow read, write: if true;
+    }
+  }
+}

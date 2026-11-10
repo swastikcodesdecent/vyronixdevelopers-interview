@@ -1,0 +1,487 @@
+/* ==========================================================================
+   VYRONIX LABS - INTERVIEWOS CANDIDATE INTERFACE STYLES
+   ========================================================================== */
+
+.candidate-body {
+  background-color: #070B16;
+  color: var(--text-main);
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Pre-check & Consent Container */
+.candidate-center-container {
+  max-width: 760px;
+  margin: 40px auto;
+  padding: 0 20px;
+  width: 100%;
+}
+
+.candidate-brand-header {
+  text-align: center;
+  margin-bottom: 32px;
+}
+
+.candidate-brand-logo {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.candidate-card {
+  background-color: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xl);
+  padding: 36px;
+  box-shadow: var(--shadow-lg);
+}
+
+.device-check-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 16px;
+  margin: 24px 0;
+}
+
+.device-check-item {
+  background-color: rgba(255, 255, 255, 0.02);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.device-check-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.device-check-icon {
+  width: 38px;
+  height: 38px;
+  border-radius: var(--radius-sm);
+  background-color: rgba(99, 102, 241, 0.1);
+  color: var(--primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.device-status-badge {
+  font-size: 0.78rem;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: var(--radius-full);
+}
+
+.status-passed {
+  background-color: var(--success-light);
+  color: var(--success);
+  border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
+.status-failed {
+  background-color: var(--danger-light);
+  color: var(--danger);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+.status-checking {
+  background-color: var(--warning-light);
+  color: var(--warning);
+  border: 1px solid rgba(245, 158, 11, 0.3);
+}
+
+/* Proctoring Consent Notice Box */
+.consent-notice-box {
+  background-color: rgba(56, 189, 248, 0.05);
+  border: 1px solid rgba(56, 189, 248, 0.2);
+  border-radius: var(--radius-md);
+  padding: 18px;
+  margin: 20px 0;
+}
+
+.consent-notice-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 12px;
+  font-size: 0.88rem;
+  color: var(--text-muted);
+}
+
+.consent-notice-list li {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.consent-notice-list li i, .consent-notice-list li svg {
+  color: var(--secondary);
+  flex-shrink: 0;
+}
+
+/* ==========================================================================
+   LIVE CANDIDATE INTERVIEW ROOM STYLES
+   ========================================================================== */
+
+.candidate-room {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  overflow: hidden;
+  position: relative;
+  background-color: #050811;
+}
+
+/* Room Header */
+.candidate-header {
+  height: 64px;
+  background-color: #0B1020;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 24px;
+  z-index: 50;
+}
+
+.candidate-header-left {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.candidate-header-center {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.interview-timer-display {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background-color: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 6px 14px;
+  font-family: var(--font-heading);
+  font-weight: 700;
+  font-size: 1.05rem;
+  color: var(--text-main);
+  letter-spacing: 0.05em;
+}
+
+.candidate-header-right {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+/* Room Main Stage */
+.candidate-stage {
+  flex: 1;
+  display: flex;
+  padding: 20px;
+  gap: 20px;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Left / Central Stage Area */
+.candidate-main-area {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  position: relative;
+}
+
+/* Flashed Question Container */
+.flashed-question-box {
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.12), rgba(56, 189, 248, 0.08));
+  border: 1px solid rgba(99, 102, 241, 0.4);
+  border-radius: var(--radius-lg);
+  padding: 24px;
+  position: relative;
+  animation: fadeInDown 0.35s ease;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+}
+
+@keyframes fadeInDown {
+  from { opacity: 0; transform: translateY(-16px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.question-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.question-num-pill {
+  font-family: var(--font-heading);
+  font-size: 0.8rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  color: var(--primary);
+  background-color: rgba(99, 102, 241, 0.2);
+  padding: 4px 12px;
+  border-radius: var(--radius-full);
+}
+
+.question-timer-countdown {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 700;
+  color: var(--warning);
+  font-size: 0.88rem;
+}
+
+.question-text-content {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--text-main);
+  line-height: 1.45;
+  margin-bottom: 16px;
+}
+
+.question-sender-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+/* Idle Question Placeholder */
+.question-idle-box {
+  background-color: var(--bg-card);
+  border: 1px dashed var(--border);
+  border-radius: var(--radius-lg);
+  padding: 36px 24px;
+  text-align: center;
+}
+
+/* Candidate Workspace & Notes / Instructions */
+.candidate-workspace-box {
+  flex: 1;
+  background-color: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.workspace-header {
+  padding: 14px 20px;
+  border-bottom: 1px solid var(--border-light);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.workspace-content {
+  flex: 1;
+  padding: 20px;
+  overflow-y: auto;
+}
+
+/* Candidate Feeds / Right Sidebar */
+.candidate-feeds-sidebar {
+  width: 320px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.feed-card {
+  background-color: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  position: relative;
+}
+
+.feed-header {
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--border-light);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.82rem;
+  font-weight: 600;
+}
+
+.candidate-webcam-preview {
+  width: 100%;
+  aspect-ratio: 16/9;
+  background-color: #03060E;
+  object-fit: cover;
+  transform: scaleX(-1); /* mirror selfie */
+}
+
+.candidate-screen-preview {
+  width: 100%;
+  aspect-ratio: 16/9;
+  background-color: #03060E;
+  object-fit: contain;
+}
+
+/* Warning Overlay / Alert Bar */
+.proctoring-warning-banner {
+  position: absolute;
+  top: 14px;
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: rgba(239, 68, 68, 0.95);
+  backdrop-filter: blur(8px);
+  color: #FFFFFF;
+  border: 1px solid #DC2626;
+  border-radius: var(--radius-md);
+  padding: 12px 24px;
+  display: none;
+  align-items: center;
+  gap: 14px;
+  z-index: 1000;
+  box-shadow: 0 10px 30px rgba(239, 68, 68, 0.4);
+  animation: shake 0.5s ease-in-out;
+}
+
+.proctoring-warning-banner.active {
+  display: flex;
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(-50%); }
+  20%, 60% { transform: translateX(calc(-50% - 8px)); }
+  40%, 80% { transform: translateX(calc(-50% + 8px)); }
+}
+
+/* Fullscreen Re-entry Modal / Overlay */
+.fullscreen-warning-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(11, 16, 32, 0.94);
+  backdrop-filter: blur(8px);
+  z-index: 9999;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+
+.fullscreen-warning-overlay.active {
+  display: flex;
+}
+
+.fullscreen-warning-card {
+  max-width: 480px;
+  width: 100%;
+  background-color: var(--bg-card);
+  border: 2px solid var(--danger);
+  border-radius: var(--radius-xl);
+  padding: 32px;
+  text-align: center;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.7);
+}
+
+/* ==========================================================================
+   CANDIDATE INTERFACE RESPONSIVE BREAKPOINTS (ALL DEVICES)
+   ========================================================================== */
+
+/* Tablets & Small Laptops (<= 900px) */
+@media (max-width: 900px) {
+  .candidate-room {
+    height: auto;
+    min-height: 100vh;
+    overflow-y: auto;
+  }
+  .candidate-stage {
+    flex-direction: column;
+    overflow: visible;
+    height: auto;
+    padding: 14px;
+    gap: 16px;
+  }
+  .candidate-feeds-sidebar {
+    width: 100%;
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+  }
+  .candidate-workspace-box {
+    min-height: 260px;
+  }
+}
+
+/* Mobile Handsets (<= 640px) */
+@media (max-width: 640px) {
+  .candidate-center-container {
+    margin: 16px auto;
+    padding: 0 12px;
+  }
+  .candidate-card {
+    padding: 20px 16px;
+  }
+  .device-check-grid {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+  .device-check-item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+  .device-check-item .btn,
+  .device-check-item .device-status-badge {
+    align-self: flex-start;
+  }
+  .candidate-header {
+    height: auto;
+    padding: 10px 14px;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+  .candidate-header-left #hdr-cand-role {
+    display: none;
+  }
+  .candidate-header-center {
+    gap: 10px;
+  }
+  .interview-timer-display {
+    padding: 4px 10px;
+    font-size: 0.95rem;
+  }
+  .candidate-feeds-sidebar {
+    grid-template-columns: 1fr;
+  }
+  .flashed-question-box {
+    padding: 16px;
+  }
+  .question-text-content {
+    font-size: 1.05rem;
+  }
+  .proctoring-warning-banner {
+    max-width: calc(100% - 24px);
+    width: calc(100% - 24px);
+    padding: 10px 14px;
+    gap: 10px;
+    font-size: 0.8rem;
+  }
+  .fullscreen-warning-card {
+    padding: 24px 18px;
+  }
+}
+
+

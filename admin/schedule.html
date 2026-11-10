@@ -1,0 +1,466 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Schedule Interview – Devs Interview - By Vyronix Labs</title>
+  <link rel="stylesheet" href="../assets/css/global.css">
+  <link rel="stylesheet" href="../assets/css/dashboard.css">
+  <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+
+<body>
+  <div class="app-layout">
+    <aside class="sidebar" id="sidebar"></aside>
+
+    <div class="main-wrapper">
+      <header class="topbar">
+        <div class="topbar-left">
+          <button class="mobile-menu-btn" id="mobile-menu-btn" title="Toggle Menu">
+            <i data-lucide="menu"></i>
+          </button>
+          <h2 class="page-title">
+            <i data-lucide="plus-circle" style="color: var(--primary);"></i>
+            Schedule Interview
+          </h2>
+        </div>
+        <div class="topbar-right">
+          <a href="interviews.html" class="btn btn-outline btn-sm">
+            <i data-lucide="arrow-left"></i> Back to Interviews
+          </a>
+        </div>
+      </header>
+
+      <main class="content-body">
+        <div class="card" style="max-width: 920px; margin: 0 auto;">
+          <div class="card-header">
+            <div>
+              <h3 class="card-title">Interview Parameters & Proctoring Policy</h3>
+              <p class="card-subtitle">Generate a cryptographically secured interview invitation with custom
+                surveillance configuration.</p>
+            </div>
+          </div>
+
+          <form id="schedule-interview-form">
+            <!-- Candidate Details -->
+            <h4
+              style="margin: 16px 0 14px; color: var(--secondary); font-size: 0.95rem; text-transform: uppercase; letter-spacing: 0.05em;">
+              1. Candidate Information
+            </h4>
+
+            <div class="grid-2">
+              <div class="form-group">
+                <label class="form-label" for="cand-name">Candidate Full Name <span class="required">*</span></label>
+                <div class="input-with-icon">
+                  <i data-lucide="user" class="input-icon"></i>
+                  <input type="text" id="cand-name" class="form-input" placeholder="e.g. Julian Henderson" required>
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label" for="cand-email">Candidate Email <span class="required">*</span></label>
+                <div class="input-with-icon">
+                  <i data-lucide="mail" class="input-icon"></i>
+                  <input type="email" id="cand-email" class="form-input" placeholder="julian.henderson@example.com"
+                    required>
+                </div>
+              </div>
+            </div>
+
+            <div class="grid-2">
+              <div class="form-group">
+                <label class="form-label" for="cand-phone">Contact Phone Number</label>
+                <div class="input-with-icon">
+                  <i data-lucide="phone" class="input-icon"></i>
+                  <input type="tel" id="cand-phone" class="form-input" placeholder="+1 (555) 019-2834">
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label" for="cand-position">Target Position <span class="required">*</span></label>
+                <div class="input-with-icon">
+                  <i data-lucide="briefcase" class="input-icon"></i>
+                  <input type="text" id="cand-position" class="form-input"
+                    placeholder="e.g. Principal Security Architect" required>
+                </div>
+              </div>
+            </div>
+
+            <div class="grid-2">
+              <div class="form-group">
+                <label class="form-label" for="cand-dept">Department <span class="required">*</span></label>
+                <select id="cand-dept" class="form-select" required>
+                  <option value="Frontend Developer">Frontend Developer</option>
+                  <option value="Backend Developer">Backend Developer</option>
+                  <option value="Cybersecurity">Cybersecurity</option>
+                  <option value="IoT & Robotics">IoT & Robotics</option>
+                  <option value="People & Talent">People & Talent</option>
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label" for="cand-type">Interview Classification <span
+                    class="required">*</span></label>
+                <select id="cand-type" class="form-select" required>
+                  <option value="Technical Interview">Technical Interview</option>
+                  <option value="HR Interview">HR Interview</option>
+                  <option value="General Interview">General Interview</option>
+                  <option value="Assessment Interview">Assessment Interview</option>
+                  <option value="Final Interview">Final Interview</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- Schedule & Assignment -->
+            <h4
+              style="margin: 24px 0 14px; color: var(--secondary); font-size: 0.95rem; text-transform: uppercase; letter-spacing: 0.05em;">
+              2. Interview Assignment & Time
+            </h4>
+
+            <div class="grid-3">
+              <div class="form-group">
+                <label class="form-label" for="cand-interviewer">Assigned Interviewer(s) <span
+                    class="required">*</span></label>
+                <select id="cand-interviewer" class="form-select" required></select>
+                <span class="form-helper"
+                  style="color: var(--secondary); font-size: 0.76rem; display: block; margin-top: 5px;">
+                  Both Suvajit &amp; Swastik can join and monitor simultaneously.
+                </span>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label" for="cand-date">Scheduled Date <span class="required">*</span></label>
+                <input type="date" id="cand-date" class="form-input" required>
+              </div>
+
+              <div class="form-group">
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                  <div>
+                    <label class="form-label" for="cand-time">Start Time <span class="required">*</span></label>
+                    <input type="time" id="cand-time" class="form-input" required>
+                  </div>
+                  <div>
+                    <label class="form-label" for="cand-duration">Duration <span class="required">*</span></label>
+                    <select id="cand-duration" class="form-select">
+                      <option value="30">30 min</option>
+                      <option value="45">45 min</option>
+                      <option value="60" selected>60 min</option>
+                      <option value="90">90 min</option>
+                      <option value="120">120 min</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Instructions -->
+            <div class="form-group">
+              <label class="form-label" for="cand-instructions">Candidate Instructions / Briefing Notes</label>
+              <textarea id="cand-instructions" class="form-textarea" rows="3"
+                placeholder="Provide candidate instructions, technical scope, or coding domain requirements..."></textarea>
+            </div>
+
+            <!-- Proctoring Configurations -->
+            <h4
+              style="margin: 24px 0 14px; color: var(--secondary); font-size: 0.95rem; text-transform: uppercase; letter-spacing: 0.05em;">
+              3. Remote Proctoring & Surveillance Configuration
+            </h4>
+
+            <div class="grid-2" style="margin-bottom: 16px;">
+              <label class="form-switch">
+                <div>
+                  <div style="font-weight: 600; font-size: 0.9rem;">Mandatory Webcam Stream</div>
+                  <div class="form-helper">Require candidate continuous camera feed transmission via WebRTC</div>
+                </div>
+                <input type="checkbox" id="cfg-webcam" checked>
+              </label>
+
+              <label class="form-switch">
+                <div>
+                  <div style="font-weight: 600; font-size: 0.9rem;">Mandatory Screen Capture</div>
+                  <div class="form-helper">Require explicit full-desktop screen broadcast during session</div>
+                </div>
+                <input type="checkbox" id="cfg-screenshare" checked>
+              </label>
+
+              <label class="form-switch">
+                <div>
+                  <div style="font-weight: 600; font-size: 0.9rem;">Enforce Fullscreen Mode</div>
+                  <div class="form-helper">Locks interface in fullscreen; flags and logs any fullscreen exits</div>
+                </div>
+                <input type="checkbox" id="cfg-fullscreen" checked>
+              </label>
+
+              <label class="form-switch">
+                <div>
+                  <div style="font-weight: 600; font-size: 0.9rem;">Tab & Window Focus Telemetry</div>
+                  <div class="form-helper">Tracks visibilityState and window blur/focus switches in real time</div>
+                </div>
+                <input type="checkbox" id="cfg-tabtrack" checked>
+              </label>
+            </div>
+
+            <div class="form-group" style="max-width: 320px;">
+              <label class="form-label" for="cfg-max-warnings">Maximum Violation Warnings Allowed</label>
+              <select id="cfg-max-warnings" class="form-select">
+                <option value="1">1 Warning (Strict)</option>
+                <option value="3" selected>3 Warnings (Standard Enterprise)</option>
+                <option value="5">5 Warnings (Lenient)</option>
+              </select>
+            </div>
+
+            <div class="form-actions-bar">
+              <a href="interviews.html" class="btn btn-secondary">Cancel</a>
+              <button type="submit" id="schedule-submit-btn" class="btn btn-primary btn-lg">
+                <i data-lucide="check-circle"></i>
+                Schedule & Generate Invitation Token
+              </button>
+            </div>
+          </form>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <!-- Invitation Modal -->
+  <div class="modal-backdrop" id="invite-modal">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3 class="card-title">
+          <i data-lucide="check-circle-2" style="color: var(--success);"></i>
+          Interview Successfully Scheduled
+        </h3>
+        <button class="btn btn-icon btn-outline btn-sm" id="modal-close-btn">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p style="font-size: 0.9rem; margin-bottom: 16px;">
+          A unique, unguessable access token has been generated. The candidate will access the proctored room
+          exclusively via this link:
+        </p>
+
+        <div
+          style="background-color: var(--bg-main); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 14px; margin-bottom: 20px;">
+          <div
+            style="font-size: 0.75rem; text-transform: uppercase; color: var(--text-muted); font-weight: 700; margin-bottom: 6px;">
+            Secure Candidate Access URL</div>
+          <div id="modal-link-display"
+            style="font-family: monospace; font-size: 0.85rem; color: var(--secondary); word-break: break-all;"></div>
+        </div>
+
+        <div style="display: flex; gap: 12px; margin-bottom: 24px;">
+          <button class="btn btn-primary btn-sm" id="modal-copy-btn">
+            <i data-lucide="copy"></i> Copy Interview Link
+          </button>
+          <button class="btn btn-secondary btn-sm" id="modal-email-btn">
+            <i data-lucide="send"></i> Dispatch Email Invitation
+          </button>
+        </div>
+
+        <div id="cloud-sync-status-notice"
+          style="display: none; padding: 12px; border-radius: var(--radius-md); font-size: 0.83rem; margin-bottom: 12px; gap: 8px; align-items: flex-start;">
+        </div>
+
+        <div id="email-dispatched-notice"
+          style="display: none; padding: 12px; background-color: var(--success-light); border: 1px solid var(--success); border-radius: var(--radius-md); font-size: 0.85rem; color: var(--success);">
+          <i data-lucide="check"></i> Email invitation dispatched to candidate's mailbox.
+        </div>
+      </div>
+      <div class="modal-footer">
+        <a href="interviews.html" class="btn btn-secondary">Go to Interview List</a>
+        <a href="#" id="modal-join-now-btn" class="btn btn-primary" target="_blank">Open Candidate Room</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Firebase App & Services SDKs (v10 Compat) -->
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
+
+  <script src="../firebase/config.js"></script>
+  <script src="../services/interview-service.js"></script>
+  <script src="../services/auth-service.js"></script>
+  <script src="../services/notification-service.js"></script>
+  <script src="../assets/js/app.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      // Guard admin-only access
+      const user = window.authService.requireAuth('admin');
+      if (!user) return;
+
+      // Populate interviewers
+      const interviewerSelect = document.getElementById('cand-interviewer');
+      const users = window.authService.getUsers().filter(u => u.isActive);
+
+      // Populate interviewers with Joint Executive Panel option as first choice
+      const jointOption = `
+        <option value="both" data-name="Both (Suvajit & Swastik - Executive Panel)" data-email="suvajit.ceo@vyronixlabs.com, swastik.cto@vyronixlabs.com" selected>
+          Both (Suvajit &amp; Swastik - Executive Panel)
+        </option>
+      `;
+
+      const individualOptions = users.map(u => `
+        <option value="${u.uid}" data-name="${u.name}" data-email="${u.email}">
+          ${u.name} (${u.position || (u.role === 'admin' ? 'Admin' : 'Interviewer')} - ${u.department})
+        </option>
+      `).join('');
+
+      interviewerSelect.innerHTML = jointOption + individualOptions;
+
+      // Set default date to today & apply platform settings defaults
+      const today = new Date().toISOString().split('T')[0];
+      document.getElementById('cand-date').value = today;
+      document.getElementById('cand-time').value = '11:00';
+
+      try {
+        const platformCfg = JSON.parse(localStorage.getItem('vyronix_platform_settings') || '{}');
+        if (platformCfg.defaultMaxWarn) {
+          document.getElementById('cfg-max-warnings').value = String(platformCfg.defaultMaxWarn);
+        }
+      } catch (e) {}
+
+      const form = document.getElementById('schedule-interview-form');
+      const submitBtn = document.getElementById('schedule-submit-btn');
+      const modal = document.getElementById('invite-modal');
+      const linkDisplay = document.getElementById('modal-link-display');
+      const copyBtn = document.getElementById('modal-copy-btn');
+      const emailBtn = document.getElementById('modal-email-btn');
+      const joinNowBtn = document.getElementById('modal-join-now-btn');
+      const emailNotice = document.getElementById('email-dispatched-notice');
+
+      let createdInterview = null;
+
+      function copyTextSafe(text) {
+        if (navigator.clipboard && window.isSecureContext) {
+          return navigator.clipboard.writeText(text).catch(() => fallbackCopy(text));
+        }
+        return Promise.resolve(fallbackCopy(text));
+      }
+
+      function fallbackCopy(text) {
+        const ta = document.createElement('textarea');
+        ta.value = text;
+        ta.style.position = 'fixed';
+        ta.style.left = '-9999px';
+        document.body.appendChild(ta);
+        ta.select();
+        try { document.execCommand('copy'); } catch (e) {}
+        document.body.removeChild(ta);
+      }
+
+      form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+
+        const selectedOption = interviewerSelect.options[interviewerSelect.selectedIndex];
+        const interviewerName = selectedOption ? selectedOption.getAttribute('data-name') : 'Executive Panel (Suvajit & Swastik)';
+        const interviewerEmail = selectedOption ? selectedOption.getAttribute('data-email') : 'suvajit.ceo@vyronixlabs.com, swastik.cto@vyronixlabs.com';
+
+        const payload = {
+          candidateName: document.getElementById('cand-name').value,
+          candidateEmail: document.getElementById('cand-email').value,
+          candidatePhone: document.getElementById('cand-phone').value,
+          position: document.getElementById('cand-position').value,
+          department: document.getElementById('cand-dept').value,
+          interviewType: document.getElementById('cand-type').value,
+          interviewerId: interviewerSelect.value,
+          interviewerName,
+          interviewerEmail,
+          scheduledDate: document.getElementById('cand-date').value,
+          scheduledTime: document.getElementById('cand-time').value,
+          duration: document.getElementById('cand-duration').value,
+          instructions: document.getElementById('cand-instructions').value,
+          settings: {
+            requireWebcam: document.getElementById('cfg-webcam').checked,
+            requireMicrophone: true,
+            requireScreenShare: document.getElementById('cfg-screenshare').checked,
+            requireFullscreen: document.getElementById('cfg-fullscreen').checked,
+            monitorBrowserActivity: document.getElementById('cfg-tabtrack').checked,
+            maxWarnings: document.getElementById('cfg-max-warnings').value
+          }
+        };
+
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = `<i data-lucide="loader"></i> Generating Token...`;
+        if (window.lucide) window.lucide.createIcons({ root: submitBtn });
+
+        try {
+          const res = await window.interviewService.createInterview(payload);
+          createdInterview = res;
+
+          // Generate full candidate link
+          const origin = window.location.origin + window.location.pathname.replace('/admin/schedule.html', '');
+          const candidateUrl = `${origin}/candidate/pre-check.html?token=${res.token}`;
+
+          linkDisplay.textContent = candidateUrl;
+          joinNowBtn.href = candidateUrl;
+          emailNotice.style.display = 'none';
+
+          const cloudNotice = document.getElementById('cloud-sync-status-notice');
+          if (cloudNotice) {
+            cloudNotice.style.display = 'flex';
+            if (res._cloudSynced) {
+              cloudNotice.style.backgroundColor = 'var(--success-light)';
+              cloudNotice.style.border = '1px solid var(--success)';
+              cloudNotice.style.color = 'var(--success)';
+              cloudNotice.innerHTML = `<i data-lucide="cloud-check" style="flex-shrink:0;"></i><span>Saved to Cloud Firestore (<code>interviews/${res.interviewId}</code>). Candidates on any device or network can join via this link.</span>`;
+            } else {
+              cloudNotice.style.backgroundColor = 'var(--warning-light)';
+              cloudNotice.style.border = '1px solid var(--warning)';
+              cloudNotice.style.color = 'var(--warning)';
+              const authErr = window.authService?.lastAuthError ? ` (Auth: ${window.authService.lastAuthError})` : '';
+              cloudNotice.innerHTML = `<i data-lucide="alert-triangle" style="flex-shrink:0;"></i><span>Saved locally, but Cloud Firestore write failed (<strong>${res._cloudError || 'permission-denied'}</strong>${authErr}). Enable Email/Password Sign-In or deploy <code>firestore.rules</code> in Firebase Console so external candidates can verify this link.</span>`;
+            }
+          }
+
+          modal.classList.add('active');
+          window.notificationService.showToast('Invitation Token Generated', `Access link ready for ${res.candidateName}.`, 'success');
+          if (window.lucide) window.lucide.createIcons();
+        } catch (err) {
+          console.error('[Schedule] Error creating interview:', err);
+          window.notificationService.showToast('Scheduling Error', err.message || 'Could not generate token. Please try again.', 'danger');
+        } finally {
+          submitBtn.disabled = false;
+          submitBtn.innerHTML = `<i data-lucide="check-circle"></i> Schedule & Generate Invitation Token`;
+          if (window.lucide) window.lucide.createIcons({ root: submitBtn });
+        }
+      });
+
+      // Copy link
+      copyBtn.addEventListener('click', async () => {
+        await copyTextSafe(linkDisplay.textContent);
+        window.notificationService.showToast('Copied to Clipboard', 'Candidate access link copied.', 'success');
+      });
+
+      // Email dispatch
+      emailBtn.addEventListener('click', () => {
+        if (!createdInterview) return;
+        const candidateUrl = linkDisplay.textContent;
+        const subject = encodeURIComponent(`Vyronix Labs Interview Invitation: ${createdInterview.position}`);
+        const body = encodeURIComponent(
+          `Dear ${createdInterview.candidateName},\n\n` +
+          `You are invited to attend a remote proctored interview with Vyronix Labs.\n\n` +
+          `Position: ${createdInterview.position}\n` +
+          `Date: ${createdInterview.scheduledDate}\n` +
+          `Time: ${createdInterview.scheduledTime} (${createdInterview.duration} minutes)\n` +
+          `Interviewer: ${createdInterview.interviewerName}\n\n` +
+          `Join Interview Room:\n${candidateUrl}\n\n` +
+          `Please join from Google Chrome or Microsoft Edge with webcam, microphone, and screen sharing ready.\n\n` +
+          `Best regards,\nDevs Interview - By Vyronix Labs`
+        );
+        window.open(`mailto:${encodeURIComponent(createdInterview.candidateEmail)}?subject=${subject}&body=${body}`, '_blank');
+        emailNotice.style.display = 'flex';
+        window.notificationService.showToast('Email Composer Opened', `Prepared invitation for ${createdInterview.candidateEmail}.`, 'info');
+      });
+
+      // Close modal
+      document.getElementById('modal-close-btn').addEventListener('click', () => {
+        modal.classList.remove('active');
+        window.location.href = 'interviews.html';
+      });
+    });
+  </script>
+</body>
+
+</html>

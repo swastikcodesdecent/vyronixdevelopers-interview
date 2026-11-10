@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Login – Devs Interview - By Vyronix Labs</title>
+  <link rel="stylesheet" href="assets/css/global.css">
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <style>
+    .login-wrapper {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      background: radial-gradient(circle at 50% 0%, rgba(99, 102, 241, 0.12) 0%, #0B1020 70%);
+    }
+    .login-container {
+      max-width: 460px;
+      width: 100%;
+    }
+    .login-brand-header {
+      text-align: center;
+      margin-bottom: 32px;
+    }
+    .login-logo {
+      width: 50px;
+      height: 50px;
+      margin: 0 auto 16px;
+      background: linear-gradient(135deg, var(--primary), var(--secondary));
+      border-radius: var(--radius-lg);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #FFFFFF;
+      box-shadow: 0 8px 24px var(--primary-glow);
+    }
+    .demo-accounts-box {
+      margin-top: 24px;
+      padding: 16px;
+      background-color: rgba(255, 255, 255, 0.02);
+      border: 1px dashed var(--border);
+      border-radius: var(--radius-md);
+    }
+    .demo-account-pill {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 8px 12px;
+      background-color: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      margin-top: 8px;
+      cursor: pointer;
+      font-size: 0.82rem;
+      transition: all 0.2s;
+    }
+    .demo-account-pill:hover {
+      border-color: var(--primary);
+      background-color: rgba(99, 102, 241, 0.08);
+    }
+    @media (max-width: 480px) {
+      .login-wrapper {
+        padding: 16px 12px;
+      }
+      .card {
+        padding: 20px 16px;
+      }
+      .login-brand-header {
+        margin-bottom: 24px;
+      }
+      .login-brand-header h1 {
+        font-size: 1.5rem !important;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="login-wrapper">
+    <div class="login-container">
+      <div class="login-brand-header">
+        <div class="login-logo">
+          <i data-lucide="shield-check" style="width: 28px; height: 28px;"></i>
+        </div>
+        <h1 style="font-size: 1.8rem; margin-bottom: 6px;">Devs Interview</h1>
+        <p style="font-size: 0.88rem; color: var(--secondary); font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em;">By Vyronix Labs</p>
+      </div>
+
+      <div class="card">
+        <div style="margin-bottom: 24px;">
+          <h3 style="font-size: 1.2rem; margin-bottom: 4px;">Sign in to your account</h3>
+          <p style="font-size: 0.85rem;">Both Administrators and Interviewers access operations through this unified portal.</p>
+        </div>
+
+        <div id="login-error-alert" style="display: none; padding: 12px 14px; background-color: var(--danger-light); border: 1px solid var(--danger); border-radius: var(--radius-md); color: var(--danger); font-size: 0.85rem; margin-bottom: 18px; align-items: center; gap: 10px;">
+          <i data-lucide="alert-circle" style="flex-shrink: 0;"></i>
+          <span id="login-error-text">Invalid credentials</span>
+        </div>
+
+        <form id="login-form">
+          <div class="form-group">
+            <label class="form-label" for="login-email">Corporate Email Address <span class="required">*</span></label>
+            <div class="input-with-icon">
+              <i data-lucide="mail" class="input-icon"></i>
+              <input type="email" id="login-email" class="form-input" placeholder="name@vyronix.com" required autocomplete="email">
+            </div>
+          </div>
+
+          <div class="form-group">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 7px;">
+              <label class="form-label" for="login-password" style="margin-bottom: 0;">Password <span class="required">*</span></label>
+              <a href="#" id="forgot-password-link" style="font-size: 0.78rem;">Forgot password?</a>
+            </div>
+            <div class="input-with-icon input-with-icon-right">
+              <i data-lucide="lock" class="input-icon"></i>
+              <input type="password" id="login-password" class="form-input" placeholder="••••••••••••" required autocomplete="current-password">
+              <i data-lucide="eye" id="toggle-password-btn" class="input-icon-right" title="Show/Hide Password"></i>
+            </div>
+          </div>
+
+          <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px;">
+            <label style="display: flex; align-items: center; gap: 8px; font-size: 0.85rem; cursor: pointer;">
+              <input type="checkbox" id="remember-me-check" checked style="accent-color: var(--primary);">
+              Remember this session
+            </label>
+          </div>
+
+          <button type="submit" id="login-submit-btn" class="btn btn-primary w-full btn-lg">
+            <span>Sign In to Dashboard</span>
+            <i data-lucide="arrow-right"></i>
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Firebase App & Services SDKs (v10 Compat) -->
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
+
+  <script src="firebase/config.js"></script>
+  <script src="services/interview-service.js"></script>
+  <script src="services/auth-service.js"></script>
+  <script src="services/notification-service.js"></script>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      if (window.lucide) window.lucide.createIcons();
+
+      const form = document.getElementById('login-form');
+      const emailInput = document.getElementById('login-email');
+      const passInput = document.getElementById('login-password');
+      const togglePassBtn = document.getElementById('toggle-password-btn');
+      const submitBtn = document.getElementById('login-submit-btn');
+      const errorAlert = document.getElementById('login-error-alert');
+      const errorText = document.getElementById('login-error-text');
+
+      // Toggle password visibility
+      togglePassBtn.addEventListener('click', () => {
+        const isPassword = passInput.getAttribute('type') === 'password';
+        passInput.setAttribute('type', isPassword ? 'text' : 'password');
+        togglePassBtn.setAttribute('data-lucide', isPassword ? 'eye-off' : 'eye');
+        if (window.lucide) window.lucide.createIcons({ root: togglePassBtn.parentElement });
+      });
+
+      // Handle form submission
+      form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        errorAlert.style.display = 'none';
+        
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = `<span>Authenticating...</span>`;
+
+        try {
+          const res = await window.authService.login(emailInput.value, passInput.value);
+          if (res.success) {
+            window.location.href = 'admin/dashboard.html';
+          }
+        } catch (err) {
+          errorText.textContent = err.message || 'Login failed. Please verify your credentials.';
+          errorAlert.style.display = 'flex';
+          submitBtn.disabled = false;
+          submitBtn.innerHTML = `<span>Sign In to Dashboard</span><i data-lucide="arrow-right"></i>`;
+          if (window.lucide) window.lucide.createIcons();
+        }
+      });
+
+      document.getElementById('forgot-password-link').addEventListener('click', (e) => {
+        e.preventDefault();
+        alert('Password reset instructions have been forwarded to your registered email address (Mock Demo). For demo, use Password@123');
+      });
+    });
+  </script>
+</body>
+</html>
+
