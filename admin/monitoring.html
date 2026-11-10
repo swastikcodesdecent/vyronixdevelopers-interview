@@ -122,10 +122,13 @@
 
               <!-- Picture-in-picture Candidate Webcam Video -->
               <div class="webcam-pip-container" id="webcam-pip">
-                <div style="position: absolute; top: 6px; left: 8px; font-size: 0.68rem; color: #FFF; background: rgba(0,0,0,0.6); padding: 2px 6px; border-radius: 4px; z-index: 2;">
-                  Candidate Webcam
+                <div style="position: absolute; top: 6px; left: 8px; right: 8px; display: flex; justify-content: space-between; align-items: center; z-index: 2;">
+                  <span style="font-size: 0.68rem; color: #FFF; background: rgba(0,0,0,0.65); padding: 2px 6px; border-radius: 4px;">Candidate Webcam</span>
+                  <button type="button" id="toggle-audio-btn" title="Toggle Candidate Audio" style="background: rgba(0,0,0,0.75); color: #F8FAFC; border: 1px solid rgba(255,255,255,0.2); border-radius: 4px; padding: 2px 6px; font-size: 0.66rem; cursor: pointer; display: flex; align-items: center; gap: 4px;">
+                    <i data-lucide="volume-x" style="width: 11px; height: 11px;"></i> Unmute
+                  </button>
                 </div>
-                <video id="remote-webcam-video" class="webcam-pip-video" autoplay playsinline></video>
+                <video id="remote-webcam-video" class="webcam-pip-video" autoplay playsinline muted></video>
               </div>
 
               <!-- Placeholder when no peer stream is active yet -->
@@ -379,15 +382,21 @@
           }
 
           if (webcamStream && remoteWebcamVideo && hasCam) {
-            remoteWebcamVideo.srcObject = webcamStream;
+            if (remoteWebcamVideo.srcObject !== webcamStream) {
+              remoteWebcamVideo.srcObject = webcamStream;
+            }
             remoteWebcamVideo.play().catch(() => {});
           }
           if (screenStream && remoteScreenVideo && hasScreen) {
-            remoteScreenVideo.srcObject = screenStream;
+            if (remoteScreenVideo.srcObject !== screenStream) {
+              remoteScreenVideo.srcObject = screenStream;
+            }
             remoteScreenVideo.play().catch(() => {});
           } else if (webcamStream && remoteScreenVideo && hasCam && !hasScreen) {
-            // Mobile / webcam-only fallback into main stage
-            remoteScreenVideo.srcObject = webcamStream;
+            // Mobile / webcam-only fallback into main stage until screen share arrives
+            if (remoteScreenVideo.srcObject !== webcamStream) {
+              remoteScreenVideo.srcObject = webcamStream;
+            }
             remoteScreenVideo.play().catch(() => {});
           }
 
@@ -395,6 +404,20 @@
           if (pillMic) pillMic.className = `health-pill ${hasMic ? 'health-ok' : ''}`;
           if (pillScreen) pillScreen.className = `health-pill ${hasScreen ? 'health-ok' : ''}`;
         };
+
+        const toggleAudioBtn = document.getElementById('toggle-audio-btn');
+        if (toggleAudioBtn && !toggleAudioBtn._bound) {
+          toggleAudioBtn._bound = true;
+          toggleAudioBtn.addEventListener('click', () => {
+            const vid = document.getElementById('remote-webcam-video');
+            if (!vid) return;
+            vid.muted = !vid.muted;
+            toggleAudioBtn.innerHTML = vid.muted
+              ? `<i data-lucide="volume-x" style="width: 11px; height: 11px;"></i> Unmute`
+              : `<i data-lucide="volume-2" style="width: 11px; height: 11px;"></i> Audio On`;
+            if (window.lucide) window.lucide.createIcons({ root: toggleAudioBtn });
+          });
+        }
 
         window.webRTCService.onTrackEnded = (kind) => {
           window.notificationService.showToast('Candidate Feed Interrupted', `Candidate ${kind} broadcast was stopped.`, 'danger');
