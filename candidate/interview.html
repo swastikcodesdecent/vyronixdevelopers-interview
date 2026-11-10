@@ -10,6 +10,22 @@
 </head>
 <body class="candidate-body">
   <div class="candidate-room">
+    <!-- Initial Fullscreen & Screen Broadcast Gate (Satisfies browser user-gesture policy) -->
+    <div class="fullscreen-warning-overlay active" id="session-activation-overlay" style="cursor: pointer; z-index: 10000;">
+      <div class="fullscreen-warning-card" style="border-color: var(--primary);">
+        <div class="metric-icon-wrap" style="margin: 0 auto 16px; background: rgba(99,102,241,0.15); color: var(--primary);">
+          <i data-lucide="maximize-2" style="width: 32px; height: 32px;"></i>
+        </div>
+        <h3 style="color: var(--text-main); font-size: 1.3rem; margin-bottom: 8px;">Enter Proctored Fullscreen Mode</h3>
+        <p style="font-size: 0.9rem; color: var(--text-muted); margin-bottom: 24px;">
+          Your camera stream is connecting. Click anywhere below to lock your browser into <strong>Fullscreen Mode</strong> and share your desktop screen with the interviewer.
+        </p>
+        <button class="btn btn-primary btn-lg w-full" id="activate-session-btn">
+          <i data-lucide="shield-check"></i> Launch Fullscreen &amp; Share Screen
+        </button>
+      </div>
+    </div>
+
     <!-- Fullscreen Warning Overlay (Triggers when candidate leaves fullscreen) -->
     <div class="fullscreen-warning-overlay" id="fullscreen-overlay">
       <div class="fullscreen-warning-card">
@@ -21,7 +37,7 @@
           You have exited full-screen mode. This violation has been recorded in the proctoring audit log and reported to your interviewer.
         </p>
         <div style="font-size: 0.85rem; font-weight: 700; color: var(--warning); margin-bottom: 24px;">
-          Violation Warnings: <span id="overlay-warning-count">1</span> / <span id="overlay-max-warnings">3</span>
+          Violation Warnings: <span id="overlay-warning-count">0</span> / <span id="overlay-max-warnings">3</span>
         </div>
         <button class="btn btn-primary btn-lg w-full" id="reenter-fullscreen-btn">
           <i data-lucide="maximize"></i> Return to Fullscreen
@@ -245,36 +261,120 @@
         timerDisplay.textContent = `${hrs}:${mins}:${secs}`;
       }, 1000);
 
-      // Start Media & WebRTC
+      // Start Webcam + WebRTC Signaling Immediately (does not block on screen-share user gesture)
       const localWebcamVideo = document.getElementById('local-webcam');
       const localScreenVideo = document.getElementById('local-screen');
 
       try {
-        const { webcamStream, screenStream } = await window.webRTCService.startCandidateMedia(interview.settings);
-        if (webcamStream) localWebcamVideo.srcObject = webcamStream;
-        if (screenStream) localScreenVideo.srcObject = screenStream;
+        const webcamStream = await window.webRTCService.startCandidateWebcam(interview.settings);
+        if (webcamStream) {
+          localWebcamVideo.srcObject = webcamStream;
+          localWebcamVideo.play().catch(() => {});
+        }
+      } catch (err) {
+        console.warn('[Candidate] Webcam capture notice:', err.message);
+      }
 
-        // Establish WebRTC connection using token as room id
+      // Establish WebRTC signaling immediately so interviewer sees webcam right away
+      try {
         await window.webRTCService.startCandidateCall(interview.token);
       } catch (err) {
-        console.warn('[Candidate] Media capture notice', err);
+        console.warn('[Candidate] WebRTC signaling notice:', err.message);
       }
 
-      // Request initial fullscreen
-      if (interview.settings.requireFullscreen) {
-        window.monitoringService.requestFullscreen();
-      }
-
-      // Start Proctoring Monitoring
-      const maxWarnings = interview.settings.maxWarnings || 3;
-      window.monitoringService.startCandidateMonitoring(interview.interviewId, maxWarnings);
-
+      const activationOverlay = document.getElementById('session-activation-overlay');
+      const activateBtn = document.getElementById('activate-session-btn');
       const fullscreenOverlay = document.getElementById('fullscreen-overlay');
       const reenterBtn = document.getElementById('reenter-fullscreen-btn');
       const warningBanner = document.getElementById('warning-banner');
       const warningDesc = document.getElementById('warning-banner-desc');
       const warningCount = document.getElementById('warning-banner-count');
       const overlayCount = document.getElementById('overlay-warning-count');
+      const maxWarnings = interview.settings.maxWarnings || 3;
+
+      let monitoringStarted = false;
+      function beginProctoringIfNeeded() {
+        if (monitoringStarted) return;
+        monitoringStarted = true;
+        window.monitoringService.startCandidateMonitoring(interview.interviewId, maxWarnings);
+      }
+
+      // Attempt automatic fullscreen immediately on load
+      let autoFsSuccess = false;
+      if (interview.settings.requireFullscreen) {
+        autoFsSuccess = await window.monitoringService.requestFullscreen();
+      } else {
+        autoFsSuccess = true;
+      }
+
+      const needsScreenGesture = !!(
+        interview.settings.requireScreenShare &&
+        navigator.mediaDevices &&
+        typeof navigator.mediaDevices.getDisplayMedia === 'function' &&
+        !window.webRTCService.screenStream
+      );
+
+      // If browser allowed auto-fullscreen AND no screen share gesture needed, hide overlay immediately
+      if (autoFsSuccess && !needsScreenGesture) {
+        activationOverlay.classList.remove('active');
+        beginProctoringIfNeeded();
+      }
+
+      // Single-click activation handler (satisfies browser user-gesture requirements for BOTH Fullscreen & Screen Share)
+      let activating = false;
+      async function activateSession() {
+        if (activating) return;
+        activating = true;
+
+        // 1. Trigger Fullscreen synchronously inside user gesture
+        if (interview.settings.requireFullscreen && !document.fullscreenElement && !document.webkitFullscreenElement) {
+          window.monitoringService.requestFullscreen();
+        }
+
+        // 2. Request Screen Share inside same user gesture (if required & supported)
+        if (needsScreenGesture && !window.webRTCService.screenStream) {
+          activateBtn.disabled = true;
+          activateBtn.innerHTML = `<i data-lucide="loader"></i> Waiting for Screen Share Selection...`;
+          if (window.lucide) window.lucide.createIcons({ root: activateBtn });
+
+          try {
+            const screenStream = await window.webRTCService.startCandidateScreenShare(interview.settings);
+            if (screenStream) {
+              localScreenVideo.srcObject = screenStream;
+              localScreenVideo.play().catch(() => {});
+            }
+          } catch (err) {
+            window.notificationService.showToast('Screen Share Required', 'Please select your screen to continue.', 'warning');
+            activateBtn.disabled = false;
+            activateBtn.innerHTML = `<i data-lucide="shield-check"></i> Launch Fullscreen &amp; Share Screen`;
+            if (window.lucide) window.lucide.createIcons({ root: activateBtn });
+            activating = false;
+            return;
+          }
+        }
+
+        activationOverlay.classList.remove('active');
+
+        // 3. Re-verify fullscreen after screen picker dialog closes
+        if (interview.settings.requireFullscreen) {
+          const isFs = !!(document.fullscreenElement || document.webkitFullscreenElement);
+          if (!isFs) {
+            await window.monitoringService.requestFullscreen();
+          }
+          // If OS picker dropped fullscreen, show prompt to re-enter without counting an initial penalty
+          setTimeout(() => {
+            if (!document.fullscreenElement && !document.webkitFullscreenElement) {
+              fullscreenOverlay.classList.add('active');
+            }
+            beginProctoringIfNeeded();
+          }, 400);
+        } else {
+          beginProctoringIfNeeded();
+        }
+        activating = false;
+      }
+
+      activationOverlay.addEventListener('click', activateSession);
 
       // Hook proctoring alerts
       window.monitoringService.onWarningTriggered = (warning) => {
@@ -291,10 +391,14 @@
         setTimeout(() => warningBanner.classList.remove('active'), 5000);
       };
 
-      reenterBtn.addEventListener('click', async () => {
+      const handleReenterFs = async () => {
         await window.monitoringService.requestFullscreen();
-        fullscreenOverlay.classList.remove('active');
-      });
+        if (document.fullscreenElement || document.webkitFullscreenElement) {
+          fullscreenOverlay.classList.remove('active');
+        }
+      };
+      reenterBtn.addEventListener('click', handleReenterFs);
+      fullscreenOverlay.addEventListener('click', handleReenterFs);
 
       // Question Broadcast Sync
       const activeQCard = document.getElementById('active-question-card');
